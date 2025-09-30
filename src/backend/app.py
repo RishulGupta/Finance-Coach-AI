@@ -1,4 +1,4 @@
-# app.py - FIXED VERSION
+# app.py - COMPREHENSIVE DEBUG VERSION
 
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,6 +6,8 @@ import pandas as pd
 from datetime import datetime
 from upload_and_process import process_and_upload
 from firebase_helper import FirebaseManager
+import traceback
+import sys
 
 # Import the fixed chat handler
 from chat_api import answer_user_internal_api
@@ -52,26 +54,66 @@ async def root():
 
 @app.post("/api/upload")
 async def upload_file(file: UploadFile = File(...), year: int = 2024, month: int = 1):
+    print(f"\n=== UPLOAD DEBUG START ===")
+    print(f"[DEBUG] Received file upload request")
+    print(f"[DEBUG] Year: {year}, Month: {month}")
+    print(f"[DEBUG] File object type: {type(file)}")
+    print(f"[DEBUG] File object attributes: {dir(file)}")
+    
     try:
         # Validate file is provided
+        print(f"[DEBUG] Checking file.filename: {file.filename}")
         if not file.filename:
+            print(f"[ERROR] No filename provided")
             raise HTTPException(status_code=400, detail="No file provided")
             
         # Validate file type
+        print(f"[DEBUG] File name: {file.filename}")
         file_extension = file.filename.lower().split('.')[-1]
+        print(f"[DEBUG] File extension: {file_extension}")
+        
         if file_extension not in ['csv', 'xlsx', 'xls']:
+            print(f"[ERROR] Unsupported file type: {file_extension}")
             raise HTTPException(status_code=400, detail="Unsupported file type. Please upload CSV or Excel files.")
         
-        # Reset file position to beginning (important for file reading)
-        await file.seek(0)
+        # Check file size
+        file_size = 0
+        try:
+            await file.seek(0, 2)  # Seek to end
+            file_size = await file.tell()  # Get size
+            await file.seek(0)  # Reset to beginning
+            print(f"[DEBUG] File size: {file_size} bytes")
+        except Exception as size_error:
+            print(f"[ERROR] Could not determine file size: {size_error}")
         
-        # Process the file - FIXED: Pass the UploadFile object, not file.file
+        # Read a small sample to verify file content
+        try:
+            sample_content = await file.read(100)
+            print(f"[DEBUG] File sample (first 100 bytes): {sample_content[:50]}...")
+            await file.seek(0)  # Reset to beginning
+        except Exception as sample_error:
+            print(f"[ERROR] Could not read file sample: {sample_error}")
+        
+        print(f"[DEBUG] About to call process_and_upload with:")
+        print(f"[DEBUG] - USER_ID: {USER_ID}")
+        print(f"[DEBUG] - year: {year}")
+        print(f"[DEBUG] - month: {month}")
+        print(f"[DEBUG] - file object: {file}")
+        print(f"[DEBUG] - file.filename: {file.filename}")
+        print(f"[DEBUG] - file.file: {file.file}")
+        
+        # Process the file - Pass the UploadFile object
         df_cat, df_sum = process_and_upload(USER_ID, year, month, file)
         
+        print(f"[DEBUG] process_and_upload returned:")
+        print(f"[DEBUG] - df_cat shape: {df_cat.shape if not df_cat.empty else 'EMPTY'}")
+        print(f"[DEBUG] - df_sum shape: {df_sum.shape if not df_sum.empty else 'EMPTY'}")
+        
         if df_cat.empty:
+            print(f"[ERROR] No transactions found after processing")
             raise HTTPException(status_code=400, detail="No valid transaction data found in the file")
             
-        return {
+        success_response = {
             "success": True,
             "message": "File processed successfully",
             "transactions": len(df_cat),
@@ -79,16 +121,26 @@ async def upload_file(file: UploadFile = File(...), year: int = 2024, month: int
             "year": year,
             "month": month
         }
+        print(f"[DEBUG] Returning success response: {success_response}")
+        return success_response
         
-    except HTTPException:
+    except HTTPException as http_err:
+        print(f"[ERROR] HTTP Exception: {http_err.detail}")
         # Re-raise HTTP exceptions without modification
         raise
     except Exception as e:
-        print(f"[ERROR] Upload failed: {str(e)}")
-        # Provide more detailed error information
-        import traceback
+        print(f"[ERROR] Unexpected exception in upload_file:")
+        print(f"[ERROR] Exception type: {type(e).__name__}")
+        print(f"[ERROR] Exception message: {str(e)}")
+        print(f"[ERROR] Full traceback:")
         traceback.print_exc()
-        raise HTTPException(status_code=400, detail=f"Upload processing failed: {str(e)}")
+        
+        # Provide more detailed error information
+        error_detail = f"Upload processing failed: {type(e).__name__}: {str(e)}"
+        print(f"[ERROR] Sending error response: {error_detail}")
+        raise HTTPException(status_code=400, detail=error_detail)
+    finally:
+        print(f"=== UPLOAD DEBUG END ===\n")
 
 @app.get("/api/data/{year}/{month}")
 async def get_financial_data(year: int, month: int):
@@ -236,9 +288,42 @@ async def health_check():
             "error": str(e)
         }
 
+# NEW: Debug endpoint to test file upload without processing
+@app.post("/api/debug/upload")
+async def debug_upload(file: UploadFile = File(...)):
+    """Debug endpoint to test file upload reception"""
+    try:
+        info = {
+            "filename": file.filename,
+            "content_type": file.content_type,
+            "file_size": 0,
+            "file_type": type(file).__name__,
+            "has_file_attr": hasattr(file, 'file'),
+            "has_filename_attr": hasattr(file, 'filename'),
+        }
+        
+        # Try to get file size
+        try:
+            await file.seek(0, 2)
+            info["file_size"] = await file.tell()
+            await file.seek(0)
+        except Exception as e:
+            info["size_error"] = str(e)
+        
+        # Try to read first few bytes
+        try:
+            sample = await file.read(50)
+            info["sample_content"] = str(sample)
+            await file.seek(0)
+        except Exception as e:
+            info["read_error"] = str(e)
+            
+        return info
+    except Exception as e:
+        return {"error": str(e), "traceback": traceback.format_exc()}
+
 if __name__ == "__main__":
     import uvicorn
-    print("[INFO] Starting Financial Management API...")
+    print("[INFO] Starting Financial Management API with DEBUG logging...")
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
-
 #uvicorn app:app --host 0.0.0.0 --port 8000 --reload

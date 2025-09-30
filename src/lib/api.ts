@@ -1,7 +1,10 @@
+// api.ts - FIXED VERSION with longer timeout and better error handling
+
 import type { ApiResponse, FinancialData, MonthData } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000');
+// FIXED: Increase timeout to 2 minutes for file processing
+const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '240000'); // 2 minutes
 
 class ApiClient {
   private baseURL: string;
@@ -39,39 +42,43 @@ class ApiClient {
         } catch {
           // If response is not JSON, use default error
         }
-        
-        const errorMessage = errorData.detail || 
-                            errorData.message || 
-                            `HTTP ${response.status}: ${response.statusText}`;
+
+        const errorMessage = errorData.detail ||
+          errorData.message ||
+          `HTTP ${response.status}: ${response.statusText}`;
         throw new Error(errorMessage);
       }
 
       return await response.json();
     } catch (error) {
       clearTimeout(timeoutId);
-      
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
-          throw new Error('Request timeout - please try again');
+          throw new Error('Request timeout - the file may be too large or processing is taking longer than expected. Please try again or use a smaller file.');
         }
         throw error;
       }
-      
       throw new Error('Unknown error occurred');
     }
   }
 
-  // Upload file to backend
-  async uploadFile(file: File, year: number, month: number): Promise<ApiResponse> {
+  // Upload file to backend with extended timeout for large files
+  async uploadFile(file: File, year: number, month: number): Promise<any> {
     const formData = new FormData();
     formData.append('file', file);
 
     // Use query parameters for year and month
     const url = `${this.baseURL}/api/upload?year=${year}&month=${month}`;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    
+    // FIXED: Use even longer timeout for file uploads (3 minutes)
+    const uploadTimeout = Math.max(this.timeout, 180000); // 3 minutes minimum
+    const timeoutId = setTimeout(() => controller.abort(), uploadTimeout);
 
     try {
+      console.log(`[API] Starting file upload: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+      console.log(`[API] Upload timeout set to: ${uploadTimeout / 1000} seconds`);
+      
       const response = await fetch(url, {
         method: 'POST',
         body: formData,
@@ -80,32 +87,36 @@ class ApiClient {
       });
 
       clearTimeout(timeoutId);
+      console.log(`[API] Upload response status: ${response.status}`);
 
       if (!response.ok) {
         let errorData: any = {};
         try {
           errorData = await response.json();
+          console.log(`[API] Error response data:`, errorData);
         } catch {
           // If response is not JSON, use default error
         }
-        
-        const errorMessage = errorData.detail || 
-                            errorData.message || 
-                            `Upload failed with status ${response.status}`;
+
+        const errorMessage = errorData.detail ||
+          errorData.message ||
+          `Upload failed with status ${response.status}`;
         throw new Error(errorMessage);
       }
 
-      return await response.json();
+      const result = await response.json();
+      console.log(`[API] Upload successful:`, result);
+      return result;
     } catch (error) {
       clearTimeout(timeoutId);
+      console.error(`[API] Upload error:`, error);
       
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
-          throw new Error('Upload timeout - please try again');
+          throw new Error('Upload timeout - Your file is being processed in the background. Please check back in a few minutes or try uploading a smaller file.');
         }
         throw error;
       }
-      
       throw new Error('Upload failed - unknown error');
     }
   }
@@ -122,8 +133,8 @@ class ApiClient {
 
   // Send chat message
   async sendChatMessage(
-    question: string, 
-    year: number = 2024, 
+    question: string,
+    year: number = 2024,
     month: number = 1
   ): Promise<{ response: string }> {
     return this.request<{ response: string }>('/api/chat', {
@@ -139,7 +150,7 @@ class ApiClient {
 
   // Get stock recommendations
   async getStockRecommendations(
-    year: number = 2024, 
+    year: number = 2024,
     month: number = 1
   ): Promise<{ recommendations: string }> {
     return this.request<{ recommendations: string }>('/api/recommendations/stocks', {
@@ -150,7 +161,7 @@ class ApiClient {
 
   // Get investment advice
   async getInvestmentAdvice(
-    year: number = 2024, 
+    year: number = 2024,
     month: number = 1
   ): Promise<{ advice: string }> {
     return this.request<{ advice: string }>('/api/recommendations/investment', {
