@@ -38,7 +38,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
       initial={{ x: -280 }}
       animate={{ x: 0 }}
       className={cn(
-        "bg-card border-r border-border h-screen flex flex-col transition-all duration-300",
+        "bg-card border-r border-border h-screen flex flex-col transition-all duration-300 shadow-lg",
         isCollapsed ? "w-16" : "w-64"
       )}
     >
@@ -48,7 +48,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
           {!isCollapsed && (
             <div className="flex items-center gap-2">
               <DollarSign className="h-8 w-8 text-primary" />
-              <span className="text-xl font-bold text-gradient-primary">
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 FinAdvisor
               </span>
             </div>
@@ -57,7 +57,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
             variant="ghost"
             size="icon"
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="ml-auto"
+            className="ml-auto hover:bg-accent"
           >
             {isCollapsed ? <Menu className="h-4 w-4" /> : <X className="h-4 w-4" />}
           </Button>
@@ -78,8 +78,10 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => onSectionChange(item.id)}
                 className={cn(
-                  "sidebar-item w-full text-left",
-                  isActive && "active"
+                  "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-all duration-200",
+                  isActive 
+                    ? "bg-primary text-primary-foreground shadow-md" 
+                    : "hover:bg-accent hover:text-accent-foreground text-muted-foreground"
                 )}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />

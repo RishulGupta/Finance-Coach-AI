@@ -1,54 +1,149 @@
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { Badge } from '@/components/ui/badge';
+import { PieChart as PieChartIcon } from 'lucide-react';
 
-const mockData = [
-  { name: 'Food & Dining', value: 2840, color: 'hsl(var(--primary))' },
-  { name: 'Transportation', value: 1560, color: 'hsl(var(--secondary))' },
-  { name: 'Shopping', value: 1200, color: 'hsl(var(--accent))' },
-  { name: 'Entertainment', value: 980, color: 'hsl(var(--primary-glow))' },
-  { name: 'Utilities', value: 870, color: 'hsl(var(--secondary-glow))' },
-  { name: 'Healthcare', value: 650, color: 'hsl(var(--accent-glow))' },
-  { name: 'Other', value: 331, color: 'hsl(var(--muted-foreground))' },
+interface CategoryBreakdownProps {
+  data: Array<{
+    category: string;
+    total_spent: number;
+    total_income: number;
+    transactions: number;
+  }>;
+  showDetails?: boolean;
+}
+
+const COLORS = [
+  '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8',
+  '#82CA9D', '#FFC658', '#FF7C7C', '#8DD1E1', '#D084D0'
 ];
 
-export function CategoryBreakdown() {
+export function CategoryBreakdown({ data, showDetails = false }: CategoryBreakdownProps) {
+  // Process data for the pie chart
+  const chartData = data
+    .filter(item => item.total_spent > 0)
+    .map(item => ({
+      name: item.category.split(':').pop() || item.category,
+      fullName: item.category,
+      value: item.total_spent,
+      transactions: item.transactions,
+      percentage: 0 // Will be calculated below
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  // Calculate percentages
+  const totalSpent = chartData.reduce((sum, item) => sum + item.value, 0);
+  chartData.forEach(item => {
+    item.percentage = (item.value / totalSpent) * 100;
+  });
+
+  const formatCurrency = (value: number) => `₹${value.toLocaleString()}`;
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-white p-3 border rounded-lg shadow-lg">
+          <p className="font-semibold">{data.name}</p>
+          <p className="text-sm text-muted-foreground">{data.fullName}</p>
+          <p className="text-sm">Amount: {formatCurrency(data.value)}</p>
+          <p className="text-sm">Percentage: {data.percentage.toFixed(1)}%</p>
+          <p className="text-sm">Transactions: {data.transactions}</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  if (chartData.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <PieChartIcon className="h-5 w-5" />
+            Category Breakdown
+          </CardTitle>
+          <CardDescription>
+            No spending data available for the selected period
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+            No data to display
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <div className="chart-container">
-      <div className="mb-4">
-        <h3 className="text-xl font-semibold">Spending by Category</h3>
-        <p className="text-sm text-muted-foreground">Current month breakdown</p>
-      </div>
-      
-      <ResponsiveContainer width="100%" height={250}>
-        <PieChart>
-          <Pie
-            data={mockData}
-            cx="50%"
-            cy="50%"
-            innerRadius={60}
-            outerRadius={100}
-            paddingAngle={2}
-            dataKey="value"
-          >
-            {mockData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color} />
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <PieChartIcon className="h-5 w-5" />
+          Category Breakdown
+        </CardTitle>
+        <CardDescription>
+          Spending distribution across categories
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[400px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={chartData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percentage }) => `${name}: ${percentage.toFixed(1)}%`}
+                outerRadius={120}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomTooltip />} />
+              {!showDetails && <Legend />}
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        {showDetails && (
+          <div className="mt-6 space-y-3">
+            <h4 className="font-semibold">Category Details</h4>
+            {chartData.map((item, index) => (
+              <div key={item.fullName} className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-4 h-4 rounded-full"
+                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                  />
+                  <div>
+                    <div className="font-medium">{item.name}</div>
+                    <div className="text-sm text-muted-foreground">{item.fullName}</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-semibold">{formatCurrency(item.value)}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {item.percentage.toFixed(1)}% • {item.transactions} transactions
+                  </div>
+                </div>
+              </div>
             ))}
-          </Pie>
-          <Tooltip 
-            contentStyle={{ 
-              backgroundColor: 'hsl(var(--card))',
-              border: '1px solid hsl(var(--border))',
-              borderRadius: '8px',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-            }}
-            formatter={(value: number) => [`$${value.toLocaleString()}`, 'Amount']}
-          />
-          <Legend 
-            verticalAlign="bottom" 
-            height={36}
-            wrapperStyle={{ fontSize: '12px' }}
-          />
-        </PieChart>
-      </ResponsiveContainer>
-    </div>
+            
+            <div className="pt-3 border-t">
+              <div className="flex justify-between items-center font-semibold">
+                <span>Total</span>
+                <span>{formatCurrency(totalSpent)}</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

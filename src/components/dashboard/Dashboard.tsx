@@ -1,143 +1,224 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  DollarSign, 
-  TrendingUp, 
-  CreditCard, 
-  PieChart,
-  Calendar,
-  ChevronDown 
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 import { MetricCard } from './MetricCard';
+import { TransactionTable } from './TransactionTable';
 import { SpendingChart } from '../charts/SpendingChart';
 import { CategoryBreakdown } from '../charts/CategoryBreakdown';
-import { TransactionTable } from './TransactionTable';
-import { Button } from '@/components/ui/button';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { apiClient } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
+import { Calendar, TrendingUp, TrendingDown, DollarSign, CreditCard } from 'lucide-react';
+import type { FinancialData, MonthData } from '@/lib/types';
 
-// Mock data - replace with real API calls
-const mockMetrics = {
-  totalSpent: '$8,431.00',
-  income: '$12,500.00',
-  transactions: '127',
-  categories: '8'
-};
+interface DashboardProps {
+  selectedYear: number;
+  selectedMonth: number;
+  availableMonths: MonthData[];
+  onPeriodChange: (period: {year: number, month: number}) => void;
+}
 
-const mockTransactions = [
-  { id: 1, date: '2024-01-15', description: 'Grocery Store', category: 'Food', amount: -156.78 },
-  { id: 2, date: '2024-01-14', description: 'Salary Deposit', category: 'Income', amount: 4500.00 },
-  { id: 3, date: '2024-01-13', description: 'Netflix Subscription', category: 'Entertainment', amount: -15.99 },
-  { id: 4, date: '2024-01-12', description: 'Gas Station', category: 'Transportation', amount: -67.43 },
-  { id: 5, date: '2024-01-11', description: 'Coffee Shop', category: 'Food', amount: -12.50 },
-];
+export function Dashboard({ selectedYear, selectedMonth, availableMonths, onPeriodChange }: DashboardProps) {
+  const [financialData, setFinancialData] = useState<FinancialData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
-export function Dashboard() {
-  const [selectedMonth, setSelectedMonth] = useState('2024-01');
-  const [selectedYear, setSelectedYear] = useState('2024');
+  useEffect(() => {
+    loadFinancialData();
+  }, [selectedYear, selectedMonth]);
+
+  const loadFinancialData = async () => {
+    setLoading(true);
+    try {
+      const response = await apiClient.getFinancialData(selectedYear, selectedMonth);
+      if (response.exists) {
+        setFinancialData(response);
+      } else {
+        setFinancialData(null);
+        toast({
+          title: "No Data Found",
+          description: `No financial data available for ${selectedMonth}/${selectedYear}`,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Failed to Load Data",
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePeriodChange = (value: string) => {
+    const [year, month] = value.split('-').map(Number);
+    onPeriodChange({ year, month });
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map(i => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-4 w-[100px]" />
+                <Skeleton className="h-4 w-4" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-[120px]" />
+                <Skeleton className="h-3 w-[80px] mt-2" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Skeleton className="h-[400px]" />
+          <Skeleton className="h-[400px]" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!financialData) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            No Data Available
+          </CardTitle>
+          <CardDescription>
+            No financial data found for the selected period. Please upload your bank statement first.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <Select onValueChange={handlePeriodChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a different period" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableMonths.map(({ year, month }) => (
+                  <SelectItem key={`${year}-${month}`} value={`${year}-${month}`}>
+                    {new Date(year, month - 1).toLocaleString('default', {
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const { transactions, summary, metrics } = financialData;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gradient-primary">Financial Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Welcome back! Here's your financial overview.
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="2024">2024</SelectItem>
-              <SelectItem value="2023">2023</SelectItem>
-              <SelectItem value="2022">2022</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-40">
-              <Calendar className="h-4 w-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="2024-01">January 2024</SelectItem>
-              <SelectItem value="2023-12">December 2023</SelectItem>
-              <SelectItem value="2023-11">November 2023</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      {/* Period Selection */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Financial Dashboard
+          </CardTitle>
+          <CardDescription>
+            View and analyze your financial data for the selected period
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <Select 
+              value={`${selectedYear}-${selectedMonth}`} 
+              onValueChange={handlePeriodChange}
+            >
+              <SelectTrigger className="w-[250px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {availableMonths.map(({ year, month }) => (
+                  <SelectItem key={`${year}-${month}`} value={`${year}-${month}`}>
+                    {new Date(year, month - 1).toLocaleString('default', {
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex items-center gap-4">
+              <Badge variant="outline">
+                {metrics?.transactionCount || 0} transactions
+              </Badge>
+              <Badge variant="outline">
+                {metrics?.categories || 0} categories
+              </Badge>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Metrics Overview */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Total Spent"
-          value={mockMetrics.totalSpent}
-          change="-12.3%"
-          changeType="positive"
-          icon={DollarSign}
-          variant="primary"
+          value={`₹${metrics?.totalSpent?.toLocaleString() || '0'}`}
+          description="This month"
+          icon={CreditCard}
+          trend={metrics?.totalSpent > 0 ? "down" : undefined}
         />
         <MetricCard
-          title="Income"
-          value={mockMetrics.income}
-          change="+5.2%"
-          changeType="positive"
-          icon={TrendingUp}
-          variant="secondary"
+          title="Total Income"
+          value={`₹${metrics?.totalIncome?.toLocaleString() || '0'}`}
+          description="This month"
+          icon={DollarSign}
+          trend={metrics?.totalIncome > 0 ? "up" : undefined}
         />
         <MetricCard
           title="Transactions"
-          value={mockMetrics.transactions}
-          change="+8"
-          changeType="neutral"
-          icon={CreditCard}
-          variant="accent"
+          value={metrics?.transactionCount?.toString() || '0'}
+          description="This month"
+          icon={TrendingUp}
         />
         <MetricCard
           title="Categories"
-          value={mockMetrics.categories}
-          icon={PieChart}
+          value={metrics?.categories?.toString() || '0'}
+          description="Spending areas"
+          icon={TrendingUp}
         />
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <SpendingChart />
-        </motion.div>
+      {/* Charts and Data */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="transactions">Transactions</TabsTrigger>
+          <TabsTrigger value="categories">Categories</TabsTrigger>
+        </TabsList>
         
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <CategoryBreakdown />
-        </motion.div>
-      </div>
-
-      {/* Transactions Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-      >
-        <TransactionTable transactions={mockTransactions} />
-      </motion.div>
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <SpendingChart data={summary || []} />
+            <CategoryBreakdown data={summary || []} />
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="transactions">
+          <TransactionTable data={transactions || []} />
+        </TabsContent>
+        
+        <TabsContent value="categories">
+          <CategoryBreakdown data={summary || []} showDetails={true} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

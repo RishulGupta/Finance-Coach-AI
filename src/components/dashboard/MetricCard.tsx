@@ -1,59 +1,66 @@
 import { motion } from 'framer-motion';
 import { LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface MetricCardProps {
   title: string;
   value: string;
-  change?: string;
-  changeType?: 'positive' | 'negative' | 'neutral';
+  description?: string;
   icon: LucideIcon;
+  trend?: 'up' | 'down';
   className?: string;
-  variant?: 'default' | 'primary' | 'secondary' | 'accent';
 }
 
-export function MetricCard({ 
-  title, 
-  value, 
-  change, 
-  changeType = 'neutral',
+export function MetricCard({
+  title,
+  value,
+  description,
   icon: Icon,
-  className,
-  variant = 'default'
+  trend,
+  className = ''
 }: MetricCardProps) {
-  const variantStyles = {
-    default: 'metric-card',
-    primary: 'metric-card gradient-primary text-primary-foreground',
-    secondary: 'metric-card gradient-secondary text-secondary-foreground',
-    accent: 'metric-card gradient-accent text-accent-foreground'
+  const getTrendColor = () => {
+    if (!trend) return 'text-muted-foreground';
+    return trend === 'up' ? 'text-green-600' : 'text-red-600';
   };
 
-  const changeColorMap = {
-    positive: 'text-secondary',
-    negative: 'text-destructive',
-    neutral: 'text-muted-foreground'
+  const getTrendIcon = () => {
+    if (!trend) return null;
+    return trend === 'up' ? '↗' : '↘';
   };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.02 }}
-      className={cn(variantStyles[variant], className)}
+      transition={{ duration: 0.3 }}
+      className={className}
     >
-      <div className="flex items-center justify-between mb-4">
-        <Icon className="h-8 w-8 opacity-70" />
-        {change && (
-          <span className={cn("text-sm font-medium", changeColorMap[changeType])}>
-            {change}
-          </span>
-        )}
-      </div>
-      
-      <div>
-        <p className="text-3xl font-bold mb-1">{value}</p>
-        <p className="text-sm opacity-70">{title}</p>
-      </div>
+      <Card className="hover:shadow-md transition-shadow">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            {title}
+          </CardTitle>
+          <Icon className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center space-x-2">
+            <div className="text-2xl font-bold">
+              {value}
+            </div>
+            {trend && (
+              <span className={`text-sm ${getTrendColor()}`}>
+                {getTrendIcon()}
+              </span>
+            )}
+          </div>
+          {description && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {description}
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </motion.div>
   );
 }

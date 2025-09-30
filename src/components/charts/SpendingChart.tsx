@@ -1,52 +1,159 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { TrendingUp } from 'lucide-react';
+import { formatCurrency } from '@/lib/financialUtils';
+import type { CategorySummary } from '@/lib/types';
 
-const mockData = [
-  { month: 'Sep', amount: 7200 },
-  { month: 'Oct', amount: 8100 },
-  { month: 'Nov', amount: 7800 },
-  { month: 'Dec', amount: 9200 },
-  { month: 'Jan', amount: 8431 },
-];
+export interface SpendingChartProps {
+  data: CategorySummary[];
+  timeframe?: 'monthly' | 'weekly' | 'daily';
+}
 
-export function SpendingChart() {
+export function SpendingChart({ data, timeframe = 'monthly' }: SpendingChartProps) {
+  // Process data for the chart
+  const chartData = data
+    .filter(item => item.total_spent > 0)
+    .map(item => ({
+      name: item.category.split(':').pop() || item.category,
+      fullName: item.category,
+      spent: item.total_spent,
+      income: item.total_income,
+      transactions: item.transactions
+    }))
+    .sort((a, b) => b.spent - a.spent)
+    .slice(0, 10); // Show top 10 categories
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-white p-3 border rounded-lg shadow-lg">
+          <p className="font-semibold">{label}</p>
+          <p className="text-sm text-muted-foreground">{data.fullName}</p>
+          <p className="text-sm text-red-600">
+            Spent: {formatCurrency(data.spent)}
+          </p>
+          {data.income > 0 && (
+            <p className="text-sm text-green-600">
+              Income: {formatCurrency(data.income)}
+            </p>
+          )}
+          <p className="text-sm text-muted-foreground">
+            {data.transactions} transactions
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  if (chartData.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Spending Chart
+          </CardTitle>
+          <CardDescription>
+            No spending data available for the selected period
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+            No data to display
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const totalSpent = chartData.reduce((sum, item) => sum + item.spent, 0);
+
   return (
-    <div className="chart-container">
-      <div className="mb-4">
-        <h3 className="text-xl font-semibold">Monthly Spending Trend</h3>
-        <p className="text-sm text-muted-foreground">Last 5 months spending comparison</p>
-      </div>
-      
-      <ResponsiveContainer width="100%" height={250}>
-        <BarChart data={mockData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-          <XAxis 
-            dataKey="month" 
-            axisLine={false}
-            tickLine={false}
-            tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-          />
-          <YAxis 
-            axisLine={false}
-            tickLine={false}
-            tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-            tickFormatter={(value) => `$${(value / 1000).toFixed(1)}k`}
-          />
-          <Tooltip 
-            contentStyle={{ 
-              backgroundColor: 'hsl(var(--card))',
-              border: '1px solid hsl(var(--border))',
-              borderRadius: '8px',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-            }}
-            formatter={(value: number) => [`$${value.toLocaleString()}`, 'Amount']}
-          />
-          <Bar 
-            dataKey="amount" 
-            fill="hsl(var(--primary))"
-            radius={[4, 4, 0, 0]}
-          />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <TrendingUp className="h-5 w-5" />
+          Spending Chart
+        </CardTitle>
+        <CardDescription>
+          Top spending categories - Total: {formatCurrency(totalSpent)}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[400px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={chartData}
+              margin={{
+                top: 20,
+                right: 30,
+                left: 20,
+                bottom: 60,
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+              <XAxis
+                dataKey="name"
+                angle={-45}
+                textAnchor="end"
+                height={60}
+                fontSize={12}
+                interval={0}
+              />
+              <YAxis
+                fontSize={12}
+                tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}K`}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend />
+              <Bar
+                dataKey="spent"
+                name="Spent"
+                fill="#ef4444"
+                radius={[4, 4, 0, 0]}
+              />
+              {chartData.some(item => item.income > 0) && (
+                <Bar
+                  dataKey="income"
+                  name="Income"
+                  fill="#22c55e"
+                  radius={[4, 4, 0, 0]}
+                />
+              )}
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Summary stats */}
+        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="text-center p-3 bg-muted/50 rounded-lg">
+            <div className="text-2xl font-bold text-red-600">
+              {chartData.length}
+            </div>
+            <div className="text-sm text-muted-foreground">Categories</div>
+          </div>
+          <div className="text-center p-3 bg-muted/50 rounded-lg">
+            <div className="text-2xl font-bold">
+              {chartData.reduce((sum, item) => sum + item.transactions, 0)}
+            </div>
+            <div className="text-sm text-muted-foreground">Transactions</div>
+          </div>
+          <div className="text-center p-3 bg-muted/50 rounded-lg">
+            <div className="text-2xl font-bold text-red-600">
+              {formatCurrency(Math.max(...chartData.map(item => item.spent)))}
+            </div>
+            <div className="text-sm text-muted-foreground">Highest Spend</div>
+          </div>
+          <div className="text-center p-3 bg-muted/50 rounded-lg">
+            <div className="text-2xl font-bold">
+              {formatCurrency(totalSpent / chartData.length)}
+            </div>
+            <div className="text-sm text-muted-foreground">Average Spend</div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
