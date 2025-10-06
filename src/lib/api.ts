@@ -1,8 +1,9 @@
-// api.ts - FIXED VERSION with longer timeout and better error handling
+// api.ts - ENHANCED VERSION with Chat History Support added to existing functionality
 
 import type { ApiResponse, FinancialData, MonthData } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
 // FIXED: Increase timeout to 2 minutes for file processing
 const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '240000'); // 2 minutes
 
@@ -15,10 +16,10 @@ class ApiClient {
     this.timeout = timeout;
   }
 
-  private async request<T>(
+  private async request(
     endpoint: string,
     options: RequestInit = {}
-  ): Promise<T> {
+  ): Promise<any> {
     const url = `${this.baseURL}${endpoint}`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
@@ -63,10 +64,10 @@ class ApiClient {
   }
 
   // Upload file to backend with extended timeout for large files
-  async uploadFile(file: File, year: number, month: number): Promise<any> {
+  async uploadFile(file: File, year: number, month: number): Promise<ApiResponse> {
     const formData = new FormData();
     formData.append('file', file);
-
+    
     // Use query parameters for year and month
     const url = `${this.baseURL}/api/upload?year=${year}&month=${month}`;
     const controller = new AbortController();
@@ -110,7 +111,6 @@ class ApiClient {
     } catch (error) {
       clearTimeout(timeoutId);
       console.error(`[API] Upload error:`, error);
-      
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
           throw new Error('Upload timeout - Your file is being processed in the background. Please check back in a few minutes or try uploading a smaller file.');
@@ -123,48 +123,97 @@ class ApiClient {
 
   // Get financial data for a specific month
   async getFinancialData(year: number, month: number): Promise<FinancialData> {
-    return this.request<FinancialData>(`/api/data/${year}/${month}`);
+    return this.request(`/api/data/${year}/${month}`);
   }
 
   // Get available months
   async getAvailableMonths(): Promise<{ months: MonthData[] }> {
-    return this.request<{ months: MonthData[] }>('/api/months');
-  }
+  return this.request('/api/months');
+}
 
-  // Send chat message
+  // ENHANCED: Send chat message with history support
   async sendChatMessage(
     question: string,
     year: number = 2024,
     month: number = 1
-  ): Promise<{ response: string }> {
-    return this.request<{ response: string }>('/api/chat', {
+  ): Promise<{ response: string; session_id?: string; history_length?: number }> {
+    const result = await this.request('/api/chat', {
       method: 'POST',
       body: JSON.stringify({ question, year, month }),
     });
+
+    // Clean up any asterisks
+    if (result.response) {
+      result.response = result.response
+        .replace(/\n{3,}/g, '\n\n')
+        .replace(/\*\*/g, '')
+        .replace(/\*/g, '');
+    }
+    return result;
+  }
+      
+  // NEW: Clear chat history for specific period
+  async clearChatHistory(year: number, month: number): Promise<{ success: boolean, message: string, session_id: string }> {
+    console.log(`[API] Clearing chat history for ${month}/${year}`);
+    
+    try {
+      const result = await this.request('/api/chat/clear', {
+        method: 'POST',
+        body: JSON.stringify({ year, month }),
+      });
+      
+      console.log('[API] Chat history cleared:', result);
+      return result;
+    } catch (error) {
+      console.error('[API] Failed to clear chat history:', error);
+      throw error;
+    }
+  }
+
+  // NEW: Get chat history for specific period
+  async getChatHistory(year: number, month: number): Promise<{ session_id: string, history: any[], message_count: number }> {
+    console.log(`[API] Getting chat history for ${month}/${year}`);
+    
+    try {
+      const result = await this.request(`/api/chat/history/${year}/${month}`);
+      console.log('[API] Chat history retrieved:', result);
+      return result;
+    } catch (error) {
+      console.error('[API] Failed to get chat history:', error);
+      throw error;
+    }
+  }
+
+  // NEW: Get all chat sessions
+  async getChatSessions(): Promise<{ sessions: any, total_sessions: number }> {
+    console.log('[API] Getting all chat sessions...');
+    
+    try {
+      const result = await this.request('/api/chat/sessions');
+      console.log('[API] Chat sessions retrieved:', result);
+      return result;
+    } catch (error) {
+      console.error('[API] Failed to get chat sessions:', error);
+      throw error;
+    }
   }
 
   // Get IPO recommendations
   async getIPORecommendations(): Promise<{ recommendations: string }> {
-    return this.request<{ recommendations: string }>('/api/recommendations/ipo');
+    return this.request('/api/recommendations/ipo');
   }
 
   // Get stock recommendations
-  async getStockRecommendations(
-    year: number = 2024,
-    month: number = 1
-  ): Promise<{ recommendations: string }> {
-    return this.request<{ recommendations: string }>('/api/recommendations/stocks', {
+  async getStockRecommendations(year: number = 2024, month: number = 1): Promise<{ recommendations: string }> {
+    return this.request('/api/recommendations/stocks', {
       method: 'POST',
       body: JSON.stringify({ year, month }),
     });
   }
 
   // Get investment advice
-  async getInvestmentAdvice(
-    year: number = 2024,
-    month: number = 1
-  ): Promise<{ advice: string }> {
-    return this.request<{ advice: string }>('/api/recommendations/investment', {
+  async getInvestmentAdvice(year: number = 2024, month: number = 1): Promise<{ advice: string }> {
+    return this.request('/api/recommendations/investment', {
       method: 'POST',
       body: JSON.stringify({ year, month }),
     });
@@ -172,7 +221,7 @@ class ApiClient {
 
   // Health check
   async healthCheck(): Promise<{ message: string; status: string }> {
-    return this.request<{ message: string; status: string }>('/');
+    return this.request('/');
   }
 
   // Test connection

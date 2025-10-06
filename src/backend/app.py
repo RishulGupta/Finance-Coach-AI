@@ -1,4 +1,5 @@
-# app.py - FIXED INTEGRATION VERSION
+# app.py - VERSION WITH CHAT HISTORY SUPPORT
+
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
@@ -8,11 +9,28 @@ from firebase_helper import FirebaseManager
 import traceback
 import sys
 import os
+from main_qa import process_chat_query, get_session_history, store
 
-# Import the FIXED chat handler
-from chat_api import answer_user_internal_api
+def clear_session_history(session_id: str):
+    """Clear chat history for a given session ID."""
+    if session_id in store:
+        store[session_id].clear()
+        print(f"[INFO] Cleared chat history for {session_id}")
 
-# Import crewagent functions with comprehensive error handling
+def get_session_stats():
+    """Get statistics for all active chat sessions."""
+    stats = {}
+    for session_id, history in store.items():
+        count = len(history.messages)
+        last = history.messages[-1].content if count else ""
+        stats[session_id] = {
+            "message_count": count,
+            "last_message": last[:50] + ("..." if len(last) > 50 else "")
+        }
+    return stats
+
+
+
 try:
     from crewagent.mainagent import (
         main as news_agents_main,
@@ -34,7 +52,7 @@ except ImportError as e:
 
 app = FastAPI(title="Financial Management API", version="1.0.0")
 
-# CORS configuration - allow all origins for development
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -170,7 +188,6 @@ async def get_months():
 
 @app.post("/api/chat")
 async def chat(request: dict):
-    """FIXED CHAT ENDPOINT - Properly integrated with all backend logic"""
     try:
         print(f"\n=== CHAT DEBUG START ===")
         
@@ -182,7 +199,11 @@ async def chat(request: dict):
         year = request.get("year", 2024)
         month = request.get("month", 1)
         
+        # Create session ID based on user and period - SAME AS STREAMLIT
+        session_id = f"{USER_ID}_{year}_{month}"
+        
         print(f"[INFO] Processing chat query: '{question}' for {month}/{year}")
+        print(f"[INFO] Session ID: {session_id}")
         print(f"[INFO] Request data: {request}")
 
         # Load current month data
@@ -203,28 +224,27 @@ async def chat(request: dict):
         prev_data = FirebaseManager.load(USER_ID, prev_date.year, prev_date.month)
         prev_sum = prev_data[1] if prev_data else None
         
-        if prev_sum is not None:
-            print(f"[INFO] Loaded previous month data: {len(prev_sum)} records")
-        else:
-            print(f"[INFO] No previous month data available")
-
-        # CRITICAL: Use the proper chat API function
-        print(f"[INFO] Calling answer_user_internal_api with question: '{question}'")
         
-        # Call the main chat processing function
-        response_text = answer_user_internal_api(question, tx_df, sum_df, prev_sum)
+        # Call the main chat processing function with session ID
+        response_text = process_chat_query(question, tx_df, sum_df, prev_sum, session_id)
         
         print(f"[INFO] Got response from answer_user_internal_api: {response_text[:100]}...")
         
-        final_response = {"response": response_text}
-        print(f"[SUCCESS] Returning final response")
-        print(f"=== CHAT DEBUG END ===\n")
+        # Get current history length
+        history = get_session_history(session_id)
+        
+        final_response = {
+            "response": response_text,
+            "session_id": session_id,
+            "history_length": len(history.messages)
+        }
+        
         
         return final_response
 
-    except HTTPException:
-        print(f"[ERROR] HTTP Exception in chat endpoint")
-        raise
+   # except HTTPException:
+   #     print(f"[ERROR] HTTP Exception in chat endpoint")
+     #   raise
     
     except Exception as e:
         print(f"[ERROR] Chat processing failed: {str(e)}")
@@ -234,6 +254,52 @@ async def chat(request: dict):
         error_msg = f"Chat processing failed: {str(e)}"
         print(f"[ERROR] Returning error: {error_msg}")
         raise HTTPException(status_code=500, detail=error_msg)
+
+# ==================== CHAT HISTORY MANAGEMENT ENDPOINTS ====================
+
+@app.post("/api/chat/clear")
+async def clear_chat_history(request: dict):
+    """Clear chat history for a specific session"""
+    try:
+        year = request.get("year", 2024)
+        month = request.get("month", 1)
+        session_id = f"{USER_ID}_{year}_{month}"
+        
+        clear_session_history(session_id)
+        
+        return {
+            "success": True,
+            "message": f"Chat history cleared for {month}/{year}",
+            "session_id": session_id
+        }
+    except Exception as e:
+        print(f"[ERROR] Clear chat history failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to clear chat history: {str(e)}")
+
+@app.get("/api/chat/history/{year}/{month}")
+async def get_chat_history(year: int, month: int):
+    """Get chat history for a specific period"""
+    try:
+        session_id = f"{USER_ID}_{year}_{month}"
+        history = get_session_history(session_id)
+        
+        return {
+            "session_id": session_id,
+            "history": [{"role": m.type, "content": m.content} for m in history.messages],
+            "message_count": len(history.messages),
+        }
+    except Exception as e:
+        print(f"[ERROR] Get chat history failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get chat history: {str(e)}")
+
+@app.get("/api/chat/sessions")
+async def get_chat_sessions():
+    try:
+        stats = get_session_stats()
+        return {"sessions": stats, "total_sessions": len(stats)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Get sessions failed: {str(e)}")
+# ==================== ORIGINAL ENDPOINTS ====================
 
 @app.get("/api/recommendations/ipo")
 async def ipo():
@@ -295,113 +361,34 @@ async def invest(request: dict):
 @app.get("/api/health")
 async def health_check():
     try:
-        # Test Firebase connection
         months = FirebaseManager.list_months(USER_ID)
-        
-        # Test chat API dependencies
-        chat_deps = {}
-        try:
-            from chat_api import answer_user_internal_api
-            chat_deps["chat_api"] = "available"
-        except ImportError as e:
-            chat_deps["chat_api"] = f"error: {str(e)}"
-        
-        # Test environment variables
+        session_stats = get_session_stats()
         env_vars = {
             "OPENAI_API_KEY": "set" if os.getenv("OPENAI_API_KEY") else "not set",
             "GROQ_API_KEY": "set" if os.getenv("GROQ_API_KEY") else "not set",
         }
-        
         return {
             "status": "healthy",
-            "firebase": "connected",
-            "available_months": len(months),
-            "user_id": USER_ID,
-            "dependencies": chat_deps,
-            "environment": env_vars
+            "firebase_months": len(months),
+            "chat_sessions": len(session_stats),
+            "environment": env_vars,
         }
     except Exception as e:
-        return {
-            "status": "degraded",
-            "firebase": "error",
-            "error": str(e)
-        }
-
-# Debug endpoint to test chat functionality directly
-@app.post("/api/debug/chat")
-async def debug_chat(request: dict):
-    """Debug endpoint to test chat functionality with detailed logging"""
-    try:
-        print(f"\n=== DEBUG CHAT START ===")
-        
-        question = request.get("question", "What is my spending summary?")
-        year = request.get("year", 2024)
-        month = request.get("month", 1)
-        
-        print(f"[DEBUG] Question: {question}")
-        print(f"[DEBUG] Year: {year}, Month: {month}")
-        
-        # Test data loading
-        print(f"[DEBUG] Testing data loading...")
-        data = FirebaseManager.load(USER_ID, year, month)
-        
-        if data is None:
-            print(f"[DEBUG] No data found")
-            return {"debug": "no_data", "message": "No data found for the specified period"}
-        
-        tx_df, sum_df, meta = data
-        print(f"[DEBUG] Data loaded successfully:")
-        print(f"[DEBUG] - Transactions: {len(tx_df)} rows")
-        print(f"[DEBUG] - Summary: {len(sum_df)} rows")
-        print(f"[DEBUG] - Metadata: {meta}")
-        
-        # Test chat API import
-        print(f"[DEBUG] Testing chat API import...")
-        try:
-            from chat_api import answer_user_internal_api
-            print(f"[DEBUG] Chat API imported successfully")
-        except ImportError as e:
-            print(f"[DEBUG] Chat API import error: {e}")
-            return {"debug": "import_error", "error": str(e)}
-        
-        # Test model initialization
-        print(f"[DEBUG] Testing model initialization...")
-        try:
-            response = answer_user_internal_api(question, tx_df, sum_df, None)
-            print(f"[DEBUG] Chat API response: {response[:100]}...")
-            
-            return {
-                "debug": "success",
-                "question": question,
-                "response": response,
-                "data_summary": {
-                    "transactions": len(tx_df),
-                    "summary_records": len(sum_df),
-                    "metadata": meta
-                }
-            }
-        except Exception as e:
-            print(f"[DEBUG] Chat API error: {e}")
-            traceback.print_exc()
-            return {"debug": "chat_error", "error": str(e), "traceback": traceback.format_exc()}
-        
-    except Exception as e:
-        print(f"[DEBUG] General error: {e}")
-        traceback.print_exc()
-        return {"debug": "general_error", "error": str(e), "traceback": traceback.format_exc()}
-    finally:
-        print(f"=== DEBUG CHAT END ===\n")
+        return {"status": "degraded", "error": str(e)}
 
 if __name__ == "__main__":
     import uvicorn
-    print("[INFO] Starting Financial Management API with FULL DEBUG logging...")
+    print("[INFO] Starting Financial Management API with CHAT HISTORY support...")
     print("[INFO] Available endpoints:")
     print("  - GET  /           : Health check")
     print("  - POST /api/upload : File upload")
     print("  - GET  /api/data/{year}/{month} : Get financial data")
-    print("  - POST /api/chat   : Chat with AI advisor (MAIN)")
+    print("  - GET  /api/months : Get available data periods")
+    print("  - POST /api/chat   : Chat with AI advisor (WITH HISTORY)")
+    print("  - POST /api/chat/clear : Clear chat history")
+    print("  - GET  /api/chat/history/{year}/{month} : Get chat history")
+    print("  - GET  /api/chat/sessions : Get all chat sessions")
     print("  - GET  /api/health : System health check")
-    print("  - POST /api/debug/chat : Debug chat functionality")
     print("[INFO] Starting server on http://0.0.0.0:8000")
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
 #uvicorn app:app --host 0.0.0.0 --port 8000 --reload

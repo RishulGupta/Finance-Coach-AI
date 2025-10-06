@@ -85,6 +85,27 @@ model = ChatGroq(model="llama-3.3-70b-versatile", groq_api_key=GROQ_API_KEY)
 '''
 # Chat history store
 store = {}
+def clear_session_history(session_id: str) -> None:
+    """
+    Clear the chat history for a given session.
+    """
+    if session_id in store:
+        store[session_id].clear()
+        print(f"✅ Cleared history for session: {session_id}")
+
+def get_session_stats() -> dict[str, dict[str, int | str]]:
+    """
+    Return statistics for all active chat sessions.
+    """
+    stats: dict[str, dict[str, int | str]] = {}
+    for session_id, history in store.items():
+        count = len(history.messages)
+        last = history.messages[-1].content if count else ""
+        stats[session_id] = {
+            "message_count": count,
+            "last_message": last[:50] + ("..." if len(last) > 50 else "")
+        }
+    return stats
 
 def get_session_history(session_id: str) -> BaseChatMessageHistory:
     """Gets the chat history for a given session ID."""
