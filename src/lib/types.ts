@@ -14,7 +14,43 @@ export interface UploadSuccessData extends ApiResponse {
   year: number;
   month: number;
 }
+export interface SpendingInsight {
+  id: string;
+  category: string;
+  currentSpend: number;
+  avgSpend: number;
+  trend: 'up' | 'down' | 'stable';
+  percentage: number;
+  recommendation: string;
+  severity: 'info' | 'warning' | 'critical';
+}
 
+export interface BudgetRecommendation {
+  id: string;
+  category: string;
+  currentBudget: number;
+  recommendedBudget: number;
+  reason: string;
+  savings: number;
+  priority: 'high' | 'medium' | 'low';
+}
+
+export interface InvestmentTip {
+  id: string;
+  title: string;
+  description: string;
+  category: 'stocks' | 'bonds' | 'crypto' | 'savings' | 'real-estate';
+  riskLevel: 'low' | 'medium' | 'high';
+  expectedReturn: string;
+  timeHorizon: string;
+  priority: number;
+}
+
+export interface FinancialInsights {
+  spendingAnalysis: SpendingInsight[];
+  budgetRecommendations: BudgetRecommendation[];
+  investmentTips: InvestmentTip[];
+}
 // Financial Data Types
 export interface Transaction {
   id?: string;

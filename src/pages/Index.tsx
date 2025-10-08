@@ -7,6 +7,8 @@ import { ChatInterface } from '@/components/advisor/ChatInterface';
 import { Dashboard } from '@/components/dashboard/Dashboard';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
+import { InsightsContainer } from '@/components/insights/InsightsContainer'; // Add this import
+
 import type { MonthData, UploadSuccessData } from '@/lib/types';
 import { 
   TrendingUp, 
@@ -16,13 +18,16 @@ import {
   DollarSign,
   PieChart,
   Activity,
-  AlertCircle
+  AlertCircle,
+  Target,
+  Brain
 } from 'lucide-react';
 
 export default function Index() {
   const [isBackendConnected, setIsBackendConnected] = useState(false);
   const [availableMonths, setAvailableMonths] = useState<MonthData[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState({ year: 2024, month: 1 });
+  const [activeInsightTab, setActiveInsightTab] = useState('investment');
   const { toast } = useToast();
 
   // Check backend connection on mount
@@ -211,47 +216,22 @@ export default function Index() {
             </TabsContent>
 
             <TabsContent value="insights">
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Investment Tips</CardTitle>
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">Coming Soon</div>
-                    <p className="text-xs text-muted-foreground">
-                      Personalized investment recommendations
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Spending Analysis</CardTitle>
-                    <PieChart className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">Coming Soon</div>
-                    <p className="text-xs text-muted-foreground">
-                      Advanced spending pattern analysis
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Budget Planning</CardTitle>
-                    <Activity className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">Coming Soon</div>
-                    <p className="text-xs text-muted-foreground">
-                      AI-powered budget recommendations
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
+    {availableMonths.length > 0 ? (
+        <InsightsContainer 
+            year={selectedPeriod.year} 
+            month={selectedPeriod.month} 
+        />
+    ) : (
+        <Card>
+            <CardHeader>
+                <CardTitle>No Data for Insights</CardTitle>
+                <CardDescription>
+                    Please upload a financial statement to generate AI-powered insights.
+                </CardDescription>
+            </CardHeader>
+        </Card>
+    )}
+</TabsContent>
           </Tabs>
         )}
       </main>

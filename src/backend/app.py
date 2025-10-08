@@ -7,9 +7,10 @@ from datetime import datetime
 from upload_and_process import process_and_upload
 from firebase_helper import FirebaseManager
 import traceback
-import sys
 import os
 from main_qa import process_chat_query, get_session_history, store
+from insights_generator import generate_financial_insights, FinancialInsights
+
 
 def clear_session_history(session_id: str):
     """Clear chat history for a given session ID."""
@@ -375,6 +376,25 @@ async def health_check():
         }
     except Exception as e:
         return {"status": "degraded", "error": str(e)}
+
+
+# --- NEW INSIGHTS ENDPOINT (Now much simpler) ---
+@app.get("/api/insights/{year}/{month}", response_model=FinancialInsights)
+async def get_financial_insights_endpoint(year: int, month: int):
+    # 1. Load current month data using the existing helper
+    current_data = FirebaseManager.load(USER_ID, year, month)
+    if current_data is None:
+        raise HTTPException(status_code=404, detail=f"No data found for {month}/{year}.")
+    tx_df, sum_df, _ = current_data
+
+    # 2. Load previous month data for comparison
+    prev_date = datetime(year, month, 1) - pd.DateOffset(months=1)
+    prev_data = FirebaseManager.load(USER_ID, prev_date.year, prev_date.month)
+    prev_sum_df = prev_data[1] if prev_data else pd.DataFrame()
+
+    # 3. Call the generation function from the other file and return the result
+    return await generate_financial_insights(tx_df, sum_df, prev_sum_df)
+
 
 if __name__ == "__main__":
     import uvicorn

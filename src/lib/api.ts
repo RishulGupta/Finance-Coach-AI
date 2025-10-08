@@ -1,6 +1,7 @@
 // api.ts - ENHANCED VERSION with Chat History Support added to existing functionality
 
 import type { ApiResponse, FinancialData, MonthData } from './types';
+import type { UploadSuccessData, FinancialInsights } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -222,6 +223,14 @@ class ApiClient {
   // Health check
   async healthCheck(): Promise<{ message: string; status: string }> {
     return this.request('/');
+  }
+  async getInsights(year: number, month: number): Promise<FinancialInsights> {
+    const response = await fetch(`${API_BASE_URL}/api/insights/${year}/${month}`);
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to fetch insights');
+    }
+    return response.json();
   }
 
   // Test connection
