@@ -1,3 +1,5 @@
+# firebase_helper.py
+
 import os
 import io
 import tempfile
@@ -22,6 +24,7 @@ load_dotenv()
 class FirebaseManager:
     """Firebase manager that works with both Admin SDK and Pyrebase"""
 
+    # ... (all existing __init__, _initialize, _try_admin_sdk_init, _init_pyrebase methods are unchanged) ...
     def __init__(self):
         self._initialized = False
         self._use_admin_sdk = False
@@ -90,16 +93,18 @@ class FirebaseManager:
         self._db = self._firebase.database()
         self._storage = self._firebase.storage()
 
-    @staticmethod
-    def _db_path(user_id: str, year: int, month: int) -> str:
+    # --- PATH HELPERS (Unchanged and New) ---
+    def _db_path(self, user_id: str, year: int, month: int) -> str:
        return f"users/{user_id}/transactions/{year}_{int(month):02d}"
 
-
-    @staticmethod
-    def _storage_path(user_id: str, year: int, month: int, file_type: str) -> str:
+    def _storage_path(self, user_id: str, year: int, month: int, file_type: str) -> str:
         return f"users/{user_id}/csv/{year}_{int(month):02d}/{file_type}.csv"
 
+    # --- NEW: Path for storing insights in the database ---
+    def _insights_db_path(self, user_id: str, year: int, month: int) -> str:
+        return f"users/{user_id}/insights/{year}_{int(month):02d}"
 
+    # ... (all existing save, _upload_csv, _download_csv, exists, load, list_months methods are unchanged) ...
     def save(self, user_id: str, year: int, month: int,
              categorized_df: pd.DataFrame, summary_df: pd.DataFrame) -> None:
         self._initialize()
@@ -123,7 +128,6 @@ class FirebaseManager:
             self._db.child(self._db_path(user_id, year, month)).child("metadata").set(metadata)
 
     def _upload_csv(self, user_id: str, year: int, month: int, file_type: str, df: pd.DataFrame) -> None:
-        # Ensure headers even if empty
         if df.empty:
             print(f"[WARN] Uploading empty {file_type} with only headers")
             if file_type == "spending_summary":
@@ -179,7 +183,12 @@ class FirebaseManager:
 
     def load(self, user_id: str, year: int, month: int) -> Optional[Tuple[pd.DataFrame, pd.DataFrame, Dict]]:
         self._initialize()
-        metadata = db.reference(f"{self._db_path(user_id, year, month)}/metadata").get() if self._use_admin_sdk else self._db.child(self._db_path(user_id, year, month)).child("metadata").get().val()
+        metadata_path = f"{self._db_path(user_id, year, month)}/metadata"
+        if self._use_admin_sdk:
+            metadata = db.reference(metadata_path).get()
+        else:
+            metadata = self._db.child(metadata_path).get().val()
+        
         if not metadata:
             return None
         return self._download_csv(user_id, year, month, "categorized_transactions"), self._download_csv(user_id, year, month, "spending_summary"), metadata
@@ -197,4 +206,43 @@ class FirebaseManager:
         return sorted(months, reverse=True)
 
 
+    # --- NEW: Method to save insights to the database ---
+    def save_insights(self, user_id: str, year: int, month: int, insights_data: Dict) -> None:
+        self._initialize()
+        path = self._insights_db_path(user_id, year, month)
+        if self._use_admin_sdk:
+            db.reference(path).set(insights_data)
+        else:
+            self._db.child(path).set(insights_data)
+        print(f"✅ [FirebaseManager] Saved insights to cache: {path}")
+
+    # --- NEW: Method to load insights from the database ---
+    def load_insights(self, user_id: str, year: int, month: int) -> Optional[Dict]:
+        self._initialize()
+        path = self._insights_db_path(user_id, year, month)
+        if self._use_admin_sdk:
+            data = db.reference(path).get()
+        else:
+            data = self._db.child(path).get().val()
+        
+        if data:
+            print(f"✅ [FirebaseManager] Loaded insights from cache: {path}")
+        else:
+            print(f"ℹ️ [FirebaseManager] No cached insights found at: {path}")
+            
+        return data
+    def delete_insights(self, user_id: str, year: int, month: int) -> None:
+        """Deletes the cached insights for a specific user, year, and month."""
+        self._initialize()
+        path = self._insights_db_path(user_id, year, month)
+        try:
+            if self._use_admin_sdk:
+                db.reference(path).delete()
+            else:
+                self._db.child(path).remove()
+            print(f"✅ [FirebaseManager] Deleted stale insights cache: {path}")
+        except Exception as e:
+            print(f"⚠️ [FirebaseManager] Could not delete insights cache at {path}: {e}")
+
+# Singleton instance
 FirebaseManager = FirebaseManager()
