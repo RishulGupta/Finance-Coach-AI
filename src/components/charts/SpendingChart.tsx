@@ -71,14 +71,16 @@ export function SpendingChart({ data, timeframe = 'monthly' }: SpendingChartProp
   const totalSpent = chartData.reduce((sum, item) => sum + item.spent, 0);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5" />
-          Spending Chart
+    <Card className="shadow-lg border-border/50">
+      <CardHeader className="space-y-2">
+        <CardTitle className="flex items-center gap-3 text-xl">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <TrendingUp className="h-6 w-6 text-primary" />
+          </div>
+          Spending Analysis
         </CardTitle>
-        <CardDescription>
-          Top spending categories - Total: {formatCurrency(totalSpent)}
+        <CardDescription className="text-sm font-medium">
+          Top spending categories · Total: {formatCurrency(totalSpent)}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -127,30 +129,30 @@ export function SpendingChart({ data, timeframe = 'monthly' }: SpendingChartProp
         </div>
 
         {/* Summary stats */}
-        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center p-3 bg-muted/50 rounded-lg">
-            <div className="text-2xl font-bold text-red-600">
+        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="text-center p-4 bg-gradient-to-br from-muted/50 to-muted/30 rounded-xl border border-border/50 shadow-sm">
+            <div className="text-2xl font-bold text-destructive">
               {chartData.length}
             </div>
-            <div className="text-sm text-muted-foreground">Categories</div>
+            <div className="text-xs text-muted-foreground font-medium mt-1">Categories</div>
           </div>
-          <div className="text-center p-3 bg-muted/50 rounded-lg">
+          <div className="text-center p-4 bg-gradient-to-br from-muted/50 to-muted/30 rounded-xl border border-border/50 shadow-sm">
             <div className="text-2xl font-bold">
               {chartData.reduce((sum, item) => sum + item.transactions, 0)}
             </div>
-            <div className="text-sm text-muted-foreground">Transactions</div>
+            <div className="text-xs text-muted-foreground font-medium mt-1">Transactions</div>
           </div>
-          <div className="text-center p-3 bg-muted/50 rounded-lg">
-            <div className="text-2xl font-bold text-red-600">
+          <div className="text-center p-4 bg-gradient-to-br from-muted/50 to-muted/30 rounded-xl border border-border/50 shadow-sm">
+            <div className="text-2xl font-bold text-destructive">
               {formatCurrency(Math.max(...chartData.map(item => item.spent)))}
             </div>
-            <div className="text-sm text-muted-foreground">Highest Spend</div>
+            <div className="text-xs text-muted-foreground font-medium mt-1">Highest Spend</div>
           </div>
-          <div className="text-center p-3 bg-muted/50 rounded-lg">
+          <div className="text-center p-4 bg-gradient-to-br from-muted/50 to-muted/30 rounded-xl border border-border/50 shadow-sm">
             <div className="text-2xl font-bold">
               {formatCurrency(totalSpent / chartData.length)}
             </div>
-            <div className="text-sm text-muted-foreground">Average Spend</div>
+            <div className="text-xs text-muted-foreground font-medium mt-1">Average Spend</div>
           </div>
         </div>
       </CardContent>

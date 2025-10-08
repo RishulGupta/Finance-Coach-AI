@@ -218,13 +218,15 @@ export function FileUpload({ onUploadSuccess }: FileUploadProps) {
   ];
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FileText className="h-5 w-5" />
+    <Card className="w-full max-w-md mx-auto shadow-lg border-border/50">
+      <CardHeader className="space-y-2">
+        <CardTitle className="flex items-center gap-3 text-xl">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <FileText className="h-6 w-6 text-primary" />
+          </div>
           Upload Bank Statement
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-sm">
           Upload your CSV or Excel bank statement to analyze your financial data
         </CardDescription>
       </CardHeader>
@@ -309,18 +311,18 @@ export function FileUpload({ onUploadSuccess }: FileUploadProps) {
         <Button
           onClick={handleUpload}
           disabled={!file || uploading}
-          className="w-full"
+          className="w-full shadow-md hover:shadow-lg transition-all"
           size="lg"
         >
           {uploading ? (
             <>
-              <Clock className="mr-2 h-4 w-4 animate-spin" />
-              {getPhaseMessage(uploadPhase)}
+              <Clock className="mr-2 h-5 w-5 animate-spin" />
+              <span className="font-semibold">{getPhaseMessage(uploadPhase)}</span>
             </>
           ) : (
             <>
-              <Upload className="mr-2 h-4 w-4" />
-              Upload & Process
+              <Upload className="mr-2 h-5 w-5" />
+              <span className="font-semibold">Upload & Process</span>
             </>
           )}
         </Button>

@@ -68,29 +68,32 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
+    <div className="min-h-screen bg-background">
+      {/* Premium Header */}
+      <header className="border-b border-border bg-card/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                <DollarSign className="h-5 w-5 text-white" />
+            <div className="flex items-center gap-4">
+              <div className="h-10 w-10 gradient-primary rounded-xl flex items-center justify-center shadow-md">
+                <DollarSign className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  Financial Manager
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  FinanceIQ
                 </h1>
-                <p className="text-sm text-muted-foreground">AI-Powered Financial Analysis</p>
+                <p className="text-xs text-muted-foreground font-medium">AI-Powered Financial Intelligence</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant={isBackendConnected ? "default" : "destructive"}>
-                {isBackendConnected ? "Connected" : "Disconnected"}
+            <div className="flex items-center gap-3">
+              <Badge 
+                variant={isBackendConnected ? "default" : "destructive"}
+                className="px-3 py-1 shadow-sm"
+              >
+                {isBackendConnected ? "● Live" : "● Offline"}
               </Badge>
               {availableMonths.length > 0 && (
-                <Badge variant="outline">
-                  {availableMonths.length} month{availableMonths.length > 1 ? 's' : ''} of data
+                <Badge variant="outline" className="px-3 py-1 border-primary/30">
+                  {availableMonths.length} period{availableMonths.length > 1 ? 's' : ''} tracked
                 </Badge>
               )}
             </div>
@@ -99,60 +102,72 @@ export default function Index() {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-6 py-8">
         {!isBackendConnected ? (
-          <Card className="max-w-2xl mx-auto">
+          <Card className="max-w-2xl mx-auto shadow-lg">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-destructive">
-                <AlertCircle className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-3 text-destructive text-xl">
+                <AlertCircle className="h-6 w-6" />
                 Backend Connection Required
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-base">
                 To use this application, please start the backend server:
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="bg-muted p-4 rounded-lg font-mono text-sm">
-                cd backend<br/>
-                pip install -r requirements.txt<br/>
-                uvicorn app:app --reload --port 8000
+              <div className="bg-muted p-5 rounded-xl font-mono text-sm space-y-1">
+                <div>cd backend</div>
+                <div>pip install -r requirements.txt</div>
+                <div>uvicorn app:app --reload --port 8000</div>
               </div>
-              <p className="text-sm text-muted-foreground mt-4">
+              <p className="text-sm text-muted-foreground mt-5">
                 Make sure to configure your Firebase credentials in the .env file.
               </p>
             </CardContent>
           </Card>
         ) : (
-          <Tabs defaultValue="upload" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 lg:w-[600px] mx-auto">
-              <TabsTrigger value="upload" className="flex items-center gap-2">
+          <Tabs defaultValue="upload" className="space-y-8">
+            <TabsList className="grid w-full grid-cols-4 lg:w-[640px] mx-auto h-14 p-1 bg-muted/50 rounded-xl shadow-sm">
+              <TabsTrigger 
+                value="upload" 
+                className="flex items-center gap-2 data-[state=active]:bg-card data-[state=active]:shadow-md rounded-lg transition-all"
+              >
                 <Upload className="h-4 w-4" />
-                Upload
+                <span className="font-medium">Upload</span>
               </TabsTrigger>
-              <TabsTrigger value="dashboard" className="flex items-center gap-2">
+              <TabsTrigger 
+                value="dashboard" 
+                className="flex items-center gap-2 data-[state=active]:bg-card data-[state=active]:shadow-md rounded-lg transition-all"
+              >
                 <BarChart3 className="h-4 w-4" />
-                Dashboard
+                <span className="font-medium">Dashboard</span>
               </TabsTrigger>
-              <TabsTrigger value="advisor" className="flex items-center gap-2">
+              <TabsTrigger 
+                value="advisor" 
+                className="flex items-center gap-2 data-[state=active]:bg-card data-[state=active]:shadow-md rounded-lg transition-all"
+              >
                 <MessageSquare className="h-4 w-4" />
-                AI Advisor
+                <span className="font-medium">AI Advisor</span>
               </TabsTrigger>
-              <TabsTrigger value="insights" className="flex items-center gap-2">
+              <TabsTrigger 
+                value="insights" 
+                className="flex items-center gap-2 data-[state=active]:bg-card data-[state=active]:shadow-md rounded-lg transition-all"
+              >
                 <TrendingUp className="h-4 w-4" />
-                Insights
+                <span className="font-medium">Insights</span>
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="upload" className="space-y-6">
+            <TabsContent value="upload" className="space-y-8">
               <div className="max-w-2xl mx-auto">
                 <FileUpload onUploadSuccess={handleUploadSuccess} />
                 
                 {availableMonths.length > 0 && (
-                  <Card className="mt-6">
+                  <Card className="mt-8 shadow-md">
                     <CardHeader>
-                      <CardTitle className="text-lg">Available Data</CardTitle>
+                      <CardTitle className="text-lg font-semibold">Available Data Periods</CardTitle>
                       <CardDescription>
-                        You have financial data for the following periods:
+                        You have financial data for the following periods
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -165,6 +180,7 @@ export default function Index() {
                                 ? "default" 
                                 : "secondary"
                             }
+                            className="px-3 py-1.5 text-sm font-medium"
                           >
                             {new Date(year, month - 1).toLocaleString('default', { 
                               month: 'long', 
