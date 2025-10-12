@@ -8,6 +8,13 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000
 // FIXED: Increase timeout to 2 minutes for file processing
 const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '240000'); // 2 minutes
 
+// Investment API response types
+interface InvestmentResponse {
+  recommendations?: string;
+  advice?: string;
+  message?: string;
+}
+
 class ApiClient {
   private baseURL: string;
   private timeout: number;
@@ -26,6 +33,7 @@ class ApiClient {
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
+      console.log(`[API] Making request to: ${url}`);
       const response = await fetch(url, {
         ...options,
         signal: controller.signal,
@@ -36,13 +44,22 @@ class ApiClient {
       });
 
       clearTimeout(timeoutId);
+      console.log(`[API] Response status: ${response.status}`);
 
       if (!response.ok) {
         let errorData: any = {};
         try {
-          errorData = await response.json();
+          const errorText = await response.text();
+          console.log(`[API] Error response text:`, errorText);
+          
+          // Try to parse as JSON, fallback to text
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            errorData = { message: errorText };
+          }
         } catch {
-          // If response is not JSON, use default error
+          // If response is not readable, use default error
         }
 
         const errorMessage = errorData.detail ||
@@ -51,12 +68,22 @@ class ApiClient {
         throw new Error(errorMessage);
       }
 
-      return await response.json();
+      const responseText = await response.text();
+      console.log(`[API] Response text:`, responseText.substring(0, 200) + '...');
+      
+      // Try to parse as JSON, return as text if it fails
+      try {
+        return JSON.parse(responseText);
+      } catch {
+        // If it's not JSON, return the text directly
+        return responseText;
+      }
     } catch (error) {
       clearTimeout(timeoutId);
+      console.error(`[API] Request failed:`, error);
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
-          throw new Error('Request timeout - the file may be too large or processing is taking longer than expected. Please try again or use a smaller file.');
+          throw new Error('Request timeout - the server is taking too long to respond. Please try again.');
         }
         throw error;
       }
@@ -199,32 +226,58 @@ class ApiClient {
     }
   }
 
-  // Get IPO recommendations
-  async getIPORecommendations(): Promise<{ recommendations: string }> {
-    return this.request('/api/recommendations/ipo');
+  // Get IPO recommendations - FIXED: Better typing
+  async getIPORecommendations(): Promise<string | InvestmentResponse> {
+    console.log('[API] Fetching IPO recommendations...');
+    try {
+      const result = await this.request('/api/recommendations/ipo');
+      console.log('[API] IPO recommendations received:', typeof result);
+      return result;
+    } catch (error) {
+      console.error('[API] IPO recommendations failed:', error);
+      throw new Error(`IPO recommendations failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
-  // Get stock recommendations
-  async getStockRecommendations(year: number = 2024, month: number = 1): Promise<{ recommendations: string }> {
-    return this.request('/api/recommendations/stocks', {
-      method: 'POST',
-      body: JSON.stringify({ year, month }),
-    });
+  // Get stock recommendations - FIXED: Better typing
+  async getStockRecommendations(year: number = 2024, month: number = 1): Promise<string | InvestmentResponse> {
+    console.log(`[API] Fetching stock recommendations for ${month}/${year}...`);
+    try {
+      const result = await this.request('/api/recommendations/stocks', {
+        method: 'POST',
+        body: JSON.stringify({ year, month }),
+      });
+      console.log('[API] Stock recommendations received:', typeof result);
+      return result;
+    } catch (error) {
+      console.error('[API] Stock recommendations failed:', error);
+      throw new Error(`Stock recommendations failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
-  // Get investment advice
-  async getInvestmentAdvice(year: number = 2024, month: number = 1): Promise<{ advice: string }> {
-    return this.request('/api/recommendations/investment', {
-      method: 'POST',
-      body: JSON.stringify({ year, month }),
-    });
+  // Get investment advice - FIXED: Better typing
+  async getInvestmentAdvice(year: number = 2024, month: number = 1): Promise<string | InvestmentResponse> {
+    console.log(`[API] Fetching investment advice for ${month}/${year}...`);
+    try {
+      const result = await this.request('/api/recommendations/investment', {
+        method: 'POST',
+        body: JSON.stringify({ year, month }),
+      });
+      console.log('[API] Investment advice received:', typeof result);
+      return result;
+    } catch (error) {
+      console.error('[API] Investment advice failed:', error);
+      throw new Error(`Investment advice failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   // Health check
   async healthCheck(): Promise<{ message: string; status: string }> {
     return this.request('/');
   }
+  
   async getInsights(year: number, month: number): Promise<FinancialInsights> {
+    console.log(`[API] Fetching insights for ${month}/${year}...`);
     const response = await fetch(`${API_BASE_URL}/api/insights/${year}/${month}`);
     if (!response.ok) {
         const errorData = await response.json();
@@ -249,4 +302,4 @@ class ApiClient {
 export const apiClient = new ApiClient();
 
 // Export types for convenience
-export type { ApiResponse, FinancialData, MonthData };
+export type { ApiResponse, FinancialData, MonthData, InvestmentResponse };

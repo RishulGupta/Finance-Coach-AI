@@ -1,4 +1,4 @@
-# app.py - VERSION WITH CHAT HISTORY SUPPORT & CACHE INVALIDATION
+# app.py - VERSION WITH CHAT HISTORY SUPPORT & INVESTMENT ENDPOINTS
 
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
@@ -230,11 +230,88 @@ async def get_financial_insights_endpoint(year: int, month: int):
     # 5. Return the new insights
     return new_insights
 
+# ==================== INVESTMENT RECOMMENDATION ENDPOINTS ====================
+
+@app.get("/api/recommendations/ipo")
+async def get_ipo_recommendations():
+    """Get IPO recommendations using CrewAI agents"""
+    try:
+        print("[INFO] Generating IPO recommendations...")
+        recommendations = main_ipo_alerts_flow()
+        return {"recommendations": recommendations}
+    except Exception as e:
+        print(f"[ERROR] IPO recommendations failed: {str(e)}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"IPO recommendations failed: {str(e)}")
+
+@app.post("/api/recommendations/stocks")
+async def get_stock_recommendations(request: dict):
+    """Get personalized stock recommendations based on user's financial data"""
+    try:
+        year = request.get("year", 2024)
+        month = request.get("month", 1)
+        
+        print(f"[INFO] Generating stock recommendations for {month}/{year}...")
+        
+        # Load user's financial data
+        data = FirebaseManager.load(USER_ID, year, month)
+        if data is None:
+            raise HTTPException(status_code=404, detail=f"No financial data found for {month}/{year}")
+        
+        tx_df, sum_df, _ = data
+        
+        # Convert dataframes to string format for CrewAI processing
+        tx_string = tx_df.to_string() if not tx_df.empty else "No transaction data"
+        
+        # --- ✅ FIX: Convert summary DataFrame to a string before passing it ---
+        sum_string = sum_df.to_string() if not sum_df.empty else "No summary data"
+        
+        # Call CrewAI stock recommendation flow with consistent string types
+        recommendations = main_stock_recommendations_flow(tx_string, sum_string)
+        
+        return {"recommendations": recommendations}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Stock recommendations failed: {str(e)}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Stock recommendations failed: {str(e)}")
+
+@app.post("/api/recommendations/investment")
+async def get_investment_advice(request: dict):
+    """Get comprehensive investment advice based on user's financial profile"""
+    try:
+        year = request.get("year", 2024)
+        month = request.get("month", 1)
+        
+        print(f"[INFO] Generating investment advice for {month}/{year}...")
+        
+        # Load user's financial data
+        data = FirebaseManager.load(USER_ID, year, month)
+        if data is None:
+            raise HTTPException(status_code=404, detail=f"No financial data found for {month}/{year}")
+        
+        tx_df, sum_df, _ = data
+        
+        # Convert dataframes to string format for CrewAI processing
+        tx_string = tx_df.to_string() if not tx_df.empty else "No transaction data"
+        sum_string = sum_df.to_string() if not sum_df.empty else "No summary data"
+        
+        # Call CrewAI investment advice flow
+        advice = news_agents_main(tx_string, sum_string)
+        
+        return {"advice": advice}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Investment advice failed: {str(e)}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Investment advice failed: {str(e)}")
 
 
 if __name__ == "__main__":
     import uvicorn
-    print("[INFO] Starting Financial Management API with CHAT HISTORY support...")
+    print("[INFO] Starting Financial Management API with INVESTMENT ENDPOINTS...")
     print("[INFO] Available endpoints:")
     print("  - GET  /           : Health check")
     print("  - POST /api/upload : File upload")
@@ -244,7 +321,10 @@ if __name__ == "__main__":
     print("  - POST /api/chat/clear : Clear chat history")
     print("  - GET  /api/chat/history/{year}/{month} : Get chat history")
     print("  - GET  /api/chat/sessions : Get all chat sessions")
-    print("  - GET  /api/health : System health check")
+    print("  - GET  /api/insights/{year}/{month} : Get AI insights")
+    print("  - GET  /api/recommendations/ipo : Get IPO recommendations")
+    print("  - POST /api/recommendations/stocks : Get stock recommendations")
+    print("  - POST /api/recommendations/investment : Get investment advice")
     print("[INFO] Starting server on http://0.0.0.0:8000")
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
 #uvicorn app:app --host 0.0.0.0 --port 8000 --reload

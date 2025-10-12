@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, Clock, Target, AlertTriangle } from 'lucide-react';
-import type { InvestmentTip } from '@/lib/types'; // Import type
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { TrendingUp, Clock, Target, AlertTriangle, Loader2, Brain } from 'lucide-react';
+import { apiClient } from '@/lib/api';
+import type { InvestmentTip } from '@/lib/types';
 
 const riskColors = {
   low: 'bg-green-100 text-green-800 border-green-200',
@@ -18,21 +21,129 @@ const categoryIcons = {
   'real-estate': Target
 };
 
-export function InvestmentTips({ tips }: { tips: InvestmentTip[] }) {
-  // --- DEBUGGER ADDED ---
+interface InvestmentTipsProps {
+  tips: InvestmentTip[];
+  year: number;
+  month: number;
+}
+
+// ✅ UPDATED HELPER FUNCTION: Extracts and cleans text from API responses
+const getInvestmentDataText = (
+  response: unknown
+): string => {
+  let rawText = '';
+
+  // Step 1: Extract the raw string from the various possible response shapes
+  if (typeof response === 'string') {
+    rawText = response;
+  } else if (typeof response === 'object' && response !== null) {
+    const data = response as { recommendations?: string; advice?: string };
+    rawText = data.recommendations || data.advice || 'No data available';
+  } else {
+    return 'No data available';
+  }
+
+  // Step 2: Clean the extracted text to remove all markdown formatting
+  const cleanedText = rawText
+    // Remove markdown headings (e.g., #, ##, ###)
+    .replace(/#{1,3}\s/g, '')
+    // Remove bold and italic asterisks (e.g., **, *)
+    .replace(/\*\*/g, '')
+    .replace(/\*/g, '')
+    // Remove markdown table formatting characters and lines
+    .replace(/\|/g, ' ')
+    .replace(/---\s*$/gm, '')
+    .replace(/:---\s*:/g, ' ')
+    .replace(/:-/g, ' ')
+    .replace(/--:/g, ' ')
+    // Normalize line breaks to prevent large empty spaces
+    .replace(/\n{3,}/g, '\n\n')
+    // Trim whitespace from the start and end
+    .trim();
+
+  return cleanedText;
+};
+
+
+export function InvestmentTips({ tips, year, month }: InvestmentTipsProps) {
+  const [loading, setLoading] = useState(false);
+  const [detailedAdvice, setDetailedAdvice] = useState<string>('');
+  const [selectedTip, setSelectedTip] = useState<InvestmentTip | null>(null);
+
   console.log("💡 [InvestmentTips] Received tips prop:", tips);
+
+  const handleViewAllTips = async () => {
+    setLoading(true);
+    try {
+      console.log(`[InvestmentTips] Fetching investment advice for ${month}/${year}`);
+      const response = await apiClient.getInvestmentAdvice(year, month);
+      console.log('[InvestmentTips] Investment advice response:', response);
+      
+      // The helper function now automatically cleans the response
+      const advice = getInvestmentDataText(response);
+      setDetailedAdvice(advice);
+    } catch (error) {
+      console.error('Failed to load detailed tips:', error);
+      setDetailedAdvice(`Failed to load detailed investment advice: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLearnMore = (tip: InvestmentTip) => {
+    setSelectedTip(tip);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Investment Tips</h2>
           <p className="text-muted-foreground">
-            Personalized investment recommendations based on your financial profile
+            Real-time investment recommendations for {month}/{year}
           </p>
         </div>
-        <Button variant="outline" size="sm">
-          View All Tips
-        </Button>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleViewAllTips}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <Brain className="mr-2 h-4 w-4" />
+                  View All Tips
+                </>
+              )}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Detailed Investment Advice</DialogTitle>
+              <DialogDescription>
+                Comprehensive investment recommendations for {month}/{year}, based on your financial data.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-4">
+              {detailedAdvice ? (
+                <div className="whitespace-pre-wrap text-sm">
+                  {detailedAdvice}
+                </div>
+              ) : (
+                <div className="text-center p-4 text-muted-foreground">
+                  Click "View All Tips" to load detailed advice from the backend.
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -74,34 +185,57 @@ export function InvestmentTips({ tips }: { tips: InvestmentTip[] }) {
                       <p className="font-medium">{tip.timeHorizon}</p>
                     </div>
                   </div>
-                  <Button size="sm" className="w-full">
-                    Learn More
-                  </Button>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => handleLearnMore(tip)}
+                      >
+                        Learn More
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>{selectedTip?.title}</DialogTitle>
+                        <DialogDescription>
+                          Detailed analysis for this investment tip
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="mt-4 space-y-4">
+                        <div>
+                          <h4 className="font-semibold">Description</h4>
+                          <p className="text-sm text-muted-foreground">{selectedTip?.description}</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <h4 className="font-semibold">Risk Level</h4>
+                            <Badge className={riskColors[selectedTip?.riskLevel || 'medium']}>
+                              {selectedTip?.riskLevel} risk
+                            </Badge>
+                          </div>
+                          <div>
+                            <h4 className="font-semibold">Category</h4>
+                            <p className="text-sm capitalize">{selectedTip?.category}</p>
+                          </div>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold">Expected Return</h4>
+                          <p className="text-sm font-medium text-green-600">{selectedTip?.expectedReturn}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold">Time Horizon</h4>
+                          <p className="text-sm">{selectedTip?.timeHorizon}</p>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </CardContent>
             </Card>
           );
         })}
       </div>
-
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-full bg-blue-100">
-              <TrendingUp className="h-6 w-6 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-blue-900">Ready to Start Investing?</h3>
-              <p className="text-blue-700 text-sm">
-                Get personalized investment advice from our AI advisor based on your spending patterns.
-              </p>
-            </div>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              Get Started
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
