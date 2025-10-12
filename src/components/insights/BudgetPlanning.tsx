@@ -247,4 +247,5 @@ export function BudgetPlanning({ recommendations }: { recommendations: BudgetRec
       </Dialog>
     </div>
   );
+  
 }
