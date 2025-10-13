@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Bot, User, Trash2, Calendar, AlertCircle, Wifi, WifiOff, Loader2, History } from 'lucide-react';
+import { Send, Bot, User, Trash2, Calendar, AlertCircle, Wifi, WifiOff, Loader2, History, Sparkles, Zap, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -143,8 +143,8 @@ export function ChatInterface() {
       .replace(/\n\n/g, '<br><br>')
       .replace(/\n/g, '<br>')
       // Highlight currency amounts in a subtle way (no bold)
-      .replace(/₹(\d+(?:,\d{3})*)/g, '<span class="text-green-700 font-mono">₹$1</span>')
-      .replace(/Rs\s*(\d+(?:,\d{3})*)/g, '<span class="text-green-700 font-mono">₹$1</span>')
+      .replace(/₹(\d+(?:,\d{3})*)/g, '<span class="text-emerald-400 font-mono">₹$1</span>')
+      .replace(/Rs\s*(\d+(?:,\d{3})*)/g, '<span class="text-emerald-400 font-mono">₹$1</span>')
       // Clean bullet points
       .replace(/^\s*[•-]\s/gm, '• ');
 
@@ -154,7 +154,7 @@ export function ChatInterface() {
   // Clean message component without bold formatting
   const MessageContent = ({ content, isBot, hasError }: { content: string, isBot: boolean, hasError?: boolean }) => {
     if (!isBot) {
-      return <div className="text-sm whitespace-pre-wrap">{content}</div>;
+      return <div className="text-sm whitespace-pre-wrap font-medium">{content}</div>;
     }
 
     // For bot messages, apply clean formatting without bold
@@ -162,7 +162,7 @@ export function ChatInterface() {
     
     return (
       <div 
-        className={`text-sm ${hasError ? 'text-red-800' : 'text-gray-800'} leading-relaxed`}
+        className={`text-sm ${hasError ? 'text-red-300' : 'text-card-foreground'} leading-relaxed`}
         style={{ maxWidth: '100%', wordWrap: 'break-word' }}
         dangerouslySetInnerHTML={{ __html: formatted }}
       />
@@ -313,78 +313,88 @@ export function ChatInterface() {
   ];
 
   return (
-    <div className="flex flex-col h-full max-w-6xl mx-auto p-6 space-y-6">
-      {/* Connection Status */}
-      {connectionStatus !== 'connected' && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <Alert className={`backdrop-blur-xl border-2 ${connectionStatus === 'disconnected' ? 'border-destructive/50 bg-destructive/5' : 'border-yellow-500/50 bg-yellow-500/5'}`}>
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center space-x-3">
-                {connectionStatus === 'checking' ? (
-                  <Wifi className="h-5 w-5 animate-pulse text-yellow-500" />
-                ) : (
-                  <WifiOff className="h-5 w-5 text-destructive" />
-                )}
-                <AlertDescription className="font-medium">
-                  {connectionStatus === 'checking' 
-                    ? 'Connecting to your AI advisor...' 
-                    : 'Connection lost. Please ensure the backend server is running.'
-                  }
-                </AlertDescription>
+    <div className="flex flex-col h-full max-w-7xl mx-auto p-6 space-y-8">
+      {/* Enhanced Connection Status */}
+      <AnimatePresence>
+        {connectionStatus !== 'connected' && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+          >
+            <Alert className={`chat-container border-2 ${connectionStatus === 'disconnected' ? 'border-destructive/50 bg-destructive/5' : 'border-yellow-500/50 bg-yellow-500/5'}`}>
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center space-x-4">
+                  {connectionStatus === 'checking' ? (
+                    <Wifi className="h-6 w-6 animate-pulse text-yellow-500" />
+                  ) : (
+                    <WifiOff className="h-6 w-6 text-destructive" />
+                  )}
+                  <AlertDescription className="font-semibold text-base">
+                    {connectionStatus === 'checking' 
+                      ? 'Connecting to your AI advisor...' 
+                      : 'Connection lost. Please ensure the backend server is running.'
+                    }
+                  </AlertDescription>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={checkConnection}
+                  className="ml-4 premium-button"
+                >
+                  Retry
+                </Button>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={checkConnection}
-                className="ml-4"
-              >
-                Retry
-              </Button>
-            </div>
-          </Alert>
-        </motion.div>
-      )}
+            </Alert>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Enhanced Data Period Selection */}
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
       >
-        <Card className="border-l-4 border-l-primary shadow-lg">
+        <Card className="chat-container shadow-2xl border-l-4 border-l-primary">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center justify-between text-base">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Calendar className="h-5 w-5 text-primary" />
-                </div>
-                <span className="font-semibold">Analysis Period</span>
+            <CardTitle className="flex items-center justify-between text-xl font-black">
+              <div className="flex items-center gap-4">
+                <motion.div 
+                  className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/15 shadow-lg"
+                  whileHover={{ rotate: 5, scale: 1.1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                >
+                  <Calendar className="h-6 w-6 text-primary" />
+                </motion.div>
+                <span className="text-3xl font-black text-white">
+                  Analysis Period
+                </span>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3">
                 {historyLength > 0 && (
-                  <Badge variant="secondary" className="flex items-center gap-1.5 px-3 py-1">
-                    <History className="h-3.5 w-3.5" />
-                    <span className="font-medium">{historyLength} messages</span>
+                  <Badge className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-accent/20 to-primary/20 border-accent/30">
+                    <History className="h-4 w-4" />
+                    <span className="font-bold">{historyLength} messages</span>
                   </Badge>
                 )}
-                <Badge variant="outline" className="px-3 py-1 border-primary/30">
+                <Badge className="px-4 py-2 border-primary/40 bg-primary/10 text-primary font-bold">
                   {availableMonths.length} {availableMonths.length === 1 ? 'period' : 'periods'}
                 </Badge>
               </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {isLoadingMonths ? (
-                <div className="flex items-center space-x-3 text-sm text-muted-foreground p-4 bg-muted/30 rounded-xl">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Loading available periods...</span>
+                <div className="flex items-center space-x-4 text-base text-muted-foreground p-6 bg-muted/20 rounded-2xl border border-border/50">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span className="font-medium">Loading available periods...</span>
                 </div>
               ) : availableMonths.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <Select 
                     value={`${selectedYear}-${selectedMonth}`} 
                     onValueChange={(value) => {
@@ -393,19 +403,19 @@ export function ChatInterface() {
                       setSelectedMonth(month);
                     }}
                   >
-                    <SelectTrigger className="w-full h-12 rounded-xl border-border/50 bg-background/50 backdrop-blur-sm hover:border-primary/50 transition-all">
+                    <SelectTrigger className="chat-input w-full h-14 text-base font-medium">
                       <SelectValue placeholder="Select a data period" />
                     </SelectTrigger>
-                    <SelectContent className="rounded-xl">
+                    <SelectContent className="rounded-2xl">
                       {availableMonths.map((period) => (
                         <SelectItem 
                           key={`${period.year}-${period.month}`} 
                           value={`${period.year}-${period.month}`}
-                          className="rounded-lg"
+                          className="rounded-xl py-3"
                         >
                           <div className="flex items-center justify-between w-full">
-                            <span className="font-medium">{period.displayName}</span>
-                            <Badge variant="secondary" className="ml-3 text-xs">
+                            <span className="font-semibold text-base">{period.displayName}</span>
+                            <Badge variant="secondary" className="ml-4 text-xs">
                               {period.year === new Date().getFullYear() && 
                                period.month === new Date().getMonth() + 1 ? 'Current' : 'Past'}
                             </Badge>
@@ -414,29 +424,34 @@ export function ChatInterface() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <div className="flex items-center justify-between text-sm px-1">
-                    <span className="text-muted-foreground">
-                      Analyzing <strong className="text-foreground">{getMonthName(parseInt(selectedMonth))} {selectedYear}</strong>
+                  <div className="flex items-center justify-between text-sm px-2">
+                    <span className="text-muted-foreground font-medium">
+                      Analyzing <strong className="text-foreground text-base">{getMonthName(parseInt(selectedMonth))} {selectedYear}</strong>
                     </span>
                     {currentSessionId && (
-                      <span className="text-xs text-primary/70 font-mono">
+                      <span className="text-xs text-primary/70 font-mono bg-primary/10 px-2 py-1 rounded-lg">
                         {currentSessionId}
                       </span>
                     )}
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-8 px-4">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-muted/30 flex items-center justify-center">
-                    <AlertCircle className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm font-medium text-foreground mb-1">No financial data available</p>
-                  <p className="text-xs text-muted-foreground mb-4">Upload your bank statements to get started</p>
+                <div className="text-center py-10 px-6">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200 }}
+                    className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-muted/30 to-muted/20 flex items-center justify-center"
+                  >
+                    <AlertCircle className="h-10 w-10 text-muted-foreground" />
+                  </motion.div>
+                  <p className="text-base font-bold text-foreground mb-2">No financial data available</p>
+                  <p className="text-sm text-muted-foreground mb-6">Upload your bank statements to get started</p>
                   <Button 
                     variant="outline" 
                     size="sm" 
                     onClick={loadAvailableMonths}
-                    className="rounded-xl"
+                    className="premium-button rounded-2xl"
                   >
                     Refresh
                   </Button>
@@ -447,104 +462,147 @@ export function ChatInterface() {
         </Card>
       </motion.div>
 
-      {/* Enhanced Chat Interface */}
+      {/* Ultra Enhanced Chat Interface */}
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
         className="flex-1 flex flex-col"
       >
-        <Card className="flex-1 flex flex-col shadow-xl border-border/50 overflow-hidden">
-          <CardHeader className="border-b border-border/50 bg-card/30 backdrop-blur-sm">
+        <Card className="chat-container flex-1 flex flex-col shadow-2xl overflow-hidden">
+          <CardHeader className="border-b border-border/50 bg-gradient-to-r from-card/40 to-card/20 backdrop-blur-xl">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 shadow-lg">
-                  <Bot className="h-6 w-6 text-primary" />
-                </div>
+              <CardTitle className="flex items-center gap-4">
+                <motion.div 
+                  className="p-4 rounded-2xl bg-gradient-to-br from-primary/20 via-accent/15 to-primary/10 shadow-xl"
+                  whileHover={{ rotate: 10, scale: 1.1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                >
+                  <Bot className="h-8 w-8 text-primary" />
+                  <motion.div
+                    className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full"
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <Sparkles className="w-2 h-2 text-white m-1" />
+                  </motion.div>
+                </motion.div>
                 <div className="flex flex-col">
-                  <span className="text-lg font-bold">AI Financial Advisor</span>
-                  <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-3xl font-black text-white">
+                    AI Financial Advisor
+                  </span>
+                  <div className="flex items-center gap-3 mt-1">
                     {connectionStatus === 'connected' && (
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                        <span className="text-xs text-green-600 font-medium">Online</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse shadow-lg shadow-emerald-500/50" />
+                        <span className="text-sm text-emerald-400 font-bold">Online & Ready</span>
                       </div>
                     )}
                     {historyLength > 0 && (
-                      <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                      <Badge className="text-xs px-3 py-1 bg-accent/20 text-accent border-accent/30">
+                        <MessageCircle className="w-3 h-3 mr-1" />
                         {historyLength} msgs
                       </Badge>
                     )}
                   </div>
                 </div>
               </CardTitle>
-              <Button variant="outline" size="sm" onClick={clearChat} className="rounded-xl gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={clearChat} 
+                className="premium-button rounded-2xl gap-2 border-destructive/30 hover:bg-destructive/10"
+              >
                 <Trash2 className="h-4 w-4" />
-                Clear
+                Clear Chat
               </Button>
             </div>
           </CardHeader>
           
-          <CardContent className="flex-1 flex flex-col p-0 bg-gradient-to-b from-background/50 to-muted/10">
-            <ScrollArea className="flex-1 p-6" ref={scrollAreaRef}>
-              <div className="space-y-6 max-w-4xl mx-auto">
-                {messages.map(msg => (
-                  <motion.div
-                    key={msg.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className={`flex gap-4 ${msg.type === 'user' ? 'flex-row-reverse' : ''}`}
-                  >
-                    {/* Avatar */}
-                    <div className={`flex-shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg ${
-                      msg.type === 'user' 
-                        ? 'bg-gradient-to-br from-primary to-primary-glow' 
-                        : msg.error 
-                          ? 'bg-gradient-to-br from-destructive/20 to-destructive/10 border border-destructive/30'
-                          : 'bg-gradient-to-br from-accent to-accent-glow'
-                    }`}>
-                      {msg.type === 'user' ? (
-                        <User className="h-5 w-5 text-white" />
-                      ) : (
-                        <Bot className={`h-5 w-5 ${msg.error ? 'text-destructive' : 'text-white'}`} />
-                      )}
-                    </div>
+          <CardContent className="flex-1 flex flex-col p-0 bg-gradient-to-b from-background/30 to-muted/5">
+            <ScrollArea className="flex-1 p-8" ref={scrollAreaRef}>
+              <div className="space-y-8 max-w-5xl mx-auto">
+                <AnimatePresence>
+                  {messages.map(msg => (
+                    <motion.div
+                      key={msg.id}
+                      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
+                      className={`flex gap-6 ${msg.type === 'user' ? 'flex-row-reverse' : ''}`}
+                    >
+                      {/* Enhanced Avatar */}
+                      <motion.div 
+                        className={`chat-avatar flex-shrink-0 ${
+                          msg.type === 'user' ? 'chat-avatar-user' : 'chat-avatar-bot'
+                        } ${msg.error ? 'bg-gradient-to-br from-destructive/30 to-destructive/20 border-2 border-destructive/40' : ''}`}
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                      >
+                        {msg.type === 'user' ? (
+                          <User className="h-6 w-6 text-white" />
+                        ) : (
+                          <Bot className={`h-6 w-6 ${msg.error ? 'text-destructive' : 'text-white'}`} />
+                        )}
+                      </motion.div>
 
-                    {/* Message Bubble */}
-                    <div className={`flex-1 max-w-3xl ${msg.type === 'user' ? 'flex justify-end' : ''}`}>
-                      <div className={`rounded-2xl px-5 py-4 shadow-md backdrop-blur-sm transition-all hover:shadow-lg ${
-                        msg.type === 'user'
-                          ? 'bg-gradient-to-br from-primary to-primary-glow text-white'
-                          : msg.error
-                            ? 'bg-destructive/10 border-2 border-destructive/20'
-                            : 'bg-card/80 border border-border/50'
-                      }`}>
-                        <MessageContent content={msg.content} isBot={msg.type === 'bot'} hasError={msg.error} />
-                        <div className={`text-xs mt-2.5 flex items-center gap-1.5 ${
-                          msg.type === 'user' ? 'text-primary-foreground/70 justify-end' : 'text-muted-foreground'
-                        }`}>
-                          <span>{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        </div>
+                      {/* Enhanced Message Bubble */}
+                      <div className={`flex-1 max-w-4xl ${msg.type === 'user' ? 'flex justify-end' : ''}`}>
+                        <motion.div 
+                          className={`${
+                            msg.type === 'user'
+                              ? 'chat-message chat-message-user'
+                              : msg.error
+                                ? 'chat-message chat-message-error'
+                                : 'chat-message chat-message-bot'
+                          }`}
+                          whileHover={{ 
+                            scale: 1.02,
+                            boxShadow: msg.type === 'user' 
+                              ? '0 20px 40px rgba(59, 130, 246, 0.3)' 
+                              : '0 20px 40px rgba(0, 0, 0, 0.1)'
+                          }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <MessageContent content={msg.content} isBot={msg.type === 'bot'} hasError={msg.error} />
+                          <div className={`text-xs mt-3 flex items-center gap-2 ${
+                            msg.type === 'user' ? 'text-primary-foreground/70 justify-end' : 'text-muted-foreground'
+                          }`}>
+                            <span className="font-medium">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                        </motion.div>
                       </div>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
                 
                 {isTyping && (
                   <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex gap-4"
+                    className="flex gap-6"
                   >
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-accent to-accent-glow flex items-center justify-center shadow-lg">
-                      <Bot className="h-5 w-5 text-white" />
+                    <div className="chat-avatar chat-avatar-bot">
+                      <Bot className="h-6 w-6 text-white" />
                     </div>
-                    <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl px-5 py-4 shadow-md">
-                      <div className="flex space-x-2">
-                        <div className="w-2.5 h-2.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <div className="w-2.5 h-2.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <div className="w-2.5 h-2.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <div className="chat-message chat-message-bot">
+                      <div className="flex space-x-3">
+                        <motion.div 
+                          className="w-3 h-3 bg-primary rounded-full"
+                          animate={{ scale: [1, 1.2, 1] }}
+                          transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                        />
+                        <motion.div 
+                          className="w-3 h-3 bg-accent rounded-full"
+                          animate={{ scale: [1, 1.2, 1] }}
+                          transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                        />
+                        <motion.div 
+                          className="w-3 h-3 bg-primary rounded-full"
+                          animate={{ scale: [1, 1.2, 1] }}
+                          transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                        />
                       </div>
                     </div>
                   </motion.div>
@@ -552,55 +610,70 @@ export function ChatInterface() {
               </div>
             </ScrollArea>
 
-            {/* Quick Questions */}
-            {messages.length === 1 && (
-              <div className="px-6 py-4 border-t border-border/50 bg-muted/20">
-                <p className="text-xs text-muted-foreground mb-3 font-semibold uppercase tracking-wide">Quick questions:</p>
-                <div className="flex flex-wrap gap-2">
-                  {quickQuestions.map((question, idx) => (
-                    <motion.div
-                      key={idx}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: idx * 0.05 }}
-                    >
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleQuickQuestion(question)}
-                        className="text-xs rounded-xl hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all"
+            {/* Enhanced Quick Questions */}
+            <AnimatePresence>
+              {messages.length === 1 && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="px-8 py-6 border-t border-border/50 bg-gradient-to-r from-muted/20 via-muted/10 to-muted/20"
+                >
+                  <p className="text-sm text-muted-foreground mb-4 font-bold uppercase tracking-wide flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-accent" />
+                    Quick questions to get started:
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    {quickQuestions.map((question, idx) => (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: idx * 0.1, duration: 0.3 }}
                       >
-                        {question}
-                      </Button>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleQuickQuestion(question)}
+                          className="text-sm rounded-2xl hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all duration-300 hover:scale-105 premium-button"
+                        >
+                          {question}
+                        </Button>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            {/* Input Area */}
-            <div className="p-6 border-t border-border/50 bg-card/30 backdrop-blur-sm">
-              <div className="flex gap-3">
+            {/* Enhanced Input Area */}
+            <div className="p-8 border-t border-border/50 bg-gradient-to-r from-card/40 via-card/30 to-card/40 backdrop-blur-xl">
+              <div className="flex gap-4">
                 <Input
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                   placeholder="Ask me anything about your finances..."
                   disabled={isTyping || connectionStatus === 'disconnected'}
-                  className="flex-1 h-12 rounded-xl border-border/50 bg-background/80 backdrop-blur-sm focus:border-primary/50 transition-all px-4"
+                  className="chat-input flex-1 h-14 text-base px-6"
                 />
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!inputValue.trim() || isTyping || connectionStatus === 'disconnected'}
-                  size="icon"
-                  className="h-12 w-12 rounded-xl shadow-md hover:shadow-lg transition-all"
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  {isTyping ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <Send className="h-5 w-5" />
-                  )}
-                </Button>
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={!inputValue.trim() || isTyping || connectionStatus === 'disconnected'}
+                    size="icon"
+                    className="h-14 w-14 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 premium-button"
+                  >
+                    {isTyping ? (
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    ) : (
+                      <Send className="h-6 w-6" />
+                    )}
+                  </Button>
+                </motion.div>
               </div>
             </div>
           </CardContent>
