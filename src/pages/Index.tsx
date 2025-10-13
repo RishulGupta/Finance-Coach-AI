@@ -332,7 +332,7 @@ rounded-xl transition-all duration-300 hover:text-white"
                       variants={tabVariants}
                       initial="hidden"
                       animate="visible"
-                      exit="exit"
+                      exit="exit" 
                       className="max-w-3xl mx-auto"
                     >
                       <FileUpload onUploadSuccess={handleUploadSuccess} />
