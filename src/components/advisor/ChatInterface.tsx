@@ -308,7 +308,6 @@ export function ChatInterface() {
     "What did I spend the most on this month?",
     "How does my spending compare to last month?", 
     "Give me investment recommendations",
-    "What are the latest IPO opportunities?",
     "Show me my spending breakdown by category"
   ];
 
@@ -469,7 +468,8 @@ export function ChatInterface() {
         transition={{ delay: 0.2, duration: 0.5 }}
         className="flex-1 flex flex-col"
       >
-        <Card className="chat-container flex-1 flex flex-col shadow-2xl overflow-hidden">
+        <Card className="flex-1 flex flex-col rounded-3xl bg-white/5 backdrop-blur-md shadow-xl overflow-hidden">
+
           <CardHeader className="border-b border-border/50 bg-gradient-to-r from-card/40 to-card/20 backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-4">
@@ -549,30 +549,20 @@ export function ChatInterface() {
 
                       {/* Enhanced Message Bubble */}
                       <div className={`flex-1 max-w-4xl ${msg.type === 'user' ? 'flex justify-end' : ''}`}>
-                        <motion.div 
-                          className={`${
-                            msg.type === 'user'
-                              ? 'chat-message chat-message-user'
-                              : msg.error
-                                ? 'chat-message chat-message-error'
-                                : 'chat-message chat-message-bot'
-                          }`}
-                          whileHover={{ 
-                            scale: 1.02,
-                            boxShadow: msg.type === 'user' 
-                              ? '0 20px 40px rgba(59, 130, 246, 0.3)' 
-                              : '0 20px 40px rgba(0, 0, 0, 0.1)'
-                          }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <MessageContent content={msg.content} isBot={msg.type === 'bot'} hasError={msg.error} />
-                          <div className={`text-xs mt-3 flex items-center gap-2 ${
-                            msg.type === 'user' ? 'text-primary-foreground/70 justify-end' : 'text-muted-foreground'
-                          }`}>
-                            <span className="font-medium">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                          </div>
-                        </motion.div>
-                      </div>
+  <motion.div 
+    className={`p-4 rounded-2xl backdrop-blur-md bg-white/10 border border-white/20 shadow-lg ${
+      msg.type === 'user' ? 'self-end bg-white/20 border-white/30' : 'self-start bg-white/10 border-white/20'
+    }`}
+    whileHover={{ scale: 1.02, boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}
+    transition={{ duration: 0.2 }}
+  >
+    <MessageContent content={msg.content} isBot={msg.type === 'bot'} hasError={msg.error} />
+    <div className="text-xs mt-2 flex justify-end text-white/70">
+      {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+    </div>
+  </motion.div>
+</div>
+
                     </motion.div>
                   ))}
                 </AnimatePresence>

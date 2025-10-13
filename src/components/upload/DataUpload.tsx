@@ -179,7 +179,7 @@ export function DataUpload({ onUploadSuccess, maxFiles = 5 }: DataUploadProps) {
       case 'uploading':
         return <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />;
       case 'success':
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
+        return <CheckCircle className="h-4 w-4 text-green-400 drop-shadow-md" />;
       case 'error':
         return <AlertCircle className="h-4 w-4 text-red-600" />;
     }
@@ -190,7 +190,7 @@ export function DataUpload({ onUploadSuccess, maxFiles = 5 }: DataUploadProps) {
       case 'uploading':
         return <Badge variant="secondary">Uploading</Badge>;
       case 'success':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Success</Badge>;
+        return <Badge variant="default" className="bg-green-100 text-green-800 shadow-md">Success</Badge>;
       case 'error':
         return <Badge variant="destructive">Error</Badge>;
     }
@@ -260,7 +260,12 @@ export function DataUpload({ onUploadSuccess, maxFiles = 5 }: DataUploadProps) {
           <CardContent>
             <div className="space-y-4">
               {files.map((file) => (
-                <div key={file.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div
+  key={file.id}
+  className="flex items-center justify-between p-4 border border-white/10 rounded-xl bg-[rgba(255,255,255,0.05)] backdrop-blur-md
+             hover:scale-[1.02] hover:border-primary/50 hover:shadow-lg transition-all duration-300"
+>
+
                   <div className="flex items-center gap-3">
                     {getStatusIcon(file.status)}
                     <div className="flex-1">
