@@ -83,10 +83,10 @@ export default function Index() {
                 <DollarSign className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  FinanceIQ
-                </h1>
-                <p className="text-xs text-muted-foreground font-medium">AI-Powered Financial Intelligence</p>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Finance Coach
+              </h1>
+              <p className="text-xs text-muted-foreground font-medium">Your AI-Powered Financial Advisor</p>
               </div>
             </div>
             <div className="flex items-center gap-3">

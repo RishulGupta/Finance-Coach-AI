@@ -51,7 +51,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
                 <DollarSign className="h-6 w-6 text-white" />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                FinanceIQ
+                Finance Coach
               </span>
             </div>
           )}
@@ -100,7 +100,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
       <div className="p-4 border-t border-border bg-muted/30">
         {!isCollapsed && (
           <div className="text-xs text-muted-foreground">
-            <p className="font-semibold text-foreground">FinanceIQ</p>
+            <p className="font-semibold text-foreground">Finance Coach</p>
             <p className="mt-0.5">v1.0.0 · Premium</p>
           </div>
         )}

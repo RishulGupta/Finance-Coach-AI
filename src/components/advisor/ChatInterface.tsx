@@ -313,273 +313,299 @@ export function ChatInterface() {
   ];
 
   return (
-    <div className="flex flex-col h-full max-w-6xl mx-auto p-4 space-y-4">
+    <div className="flex flex-col h-full max-w-6xl mx-auto p-6 space-y-6">
       {/* Connection Status */}
       {connectionStatus !== 'connected' && (
-        <Alert className={connectionStatus === 'disconnected' ? 'border-destructive' : 'border-yellow-500'}>
-          <div className="flex items-center space-x-2">
-            {connectionStatus === 'checking' ? (
-              <Wifi className="h-4 w-4 animate-pulse" />
-            ) : (
-              <WifiOff className="h-4 w-4" />
-            )}
-            <AlertDescription>
-              {connectionStatus === 'checking' 
-                ? 'Checking connection to AI advisor...' 
-                : 'Disconnected from AI advisor. Please ensure the backend server is running on http://localhost:8000'
-              }
-            </AlertDescription>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={checkConnection}
-            className="ml-auto"
-          >
-            Retry
-          </Button>
-        </Alert>
-      )}
-
-      {/* Enhanced Data Period Selection - ONLY SHOW AVAILABLE MONTHS */}
-      <Card className="border-l-4 border-l-blue-500">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center justify-between text-sm font-medium">
-            <div className="flex items-center">
-              <Calendar className="mr-2 h-4 w-4" />
-              Data Period for Analysis
-            </div>
-            <div className="flex items-center space-x-2">
-              {historyLength > 0 && (
-                <Badge variant="secondary" className="flex items-center space-x-1">
-                  <History className="h-3 w-3" />
-                  <span>{historyLength} messages</span>
-                </Badge>
-              )}
-              <Badge variant="outline" className="ml-2">
-                {availableMonths.length} {availableMonths.length === 1 ? 'period' : 'periods'} available
-              </Badge>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {isLoadingMonths ? (
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Loading available data periods...</span>
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Alert className={`backdrop-blur-xl border-2 ${connectionStatus === 'disconnected' ? 'border-destructive/50 bg-destructive/5' : 'border-yellow-500/50 bg-yellow-500/5'}`}>
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center space-x-3">
+                {connectionStatus === 'checking' ? (
+                  <Wifi className="h-5 w-5 animate-pulse text-yellow-500" />
+                ) : (
+                  <WifiOff className="h-5 w-5 text-destructive" />
+                )}
+                <AlertDescription className="font-medium">
+                  {connectionStatus === 'checking' 
+                    ? 'Connecting to your AI advisor...' 
+                    : 'Connection lost. Please ensure the backend server is running.'
+                  }
+                </AlertDescription>
               </div>
-            ) : availableMonths.length > 0 ? (
-              <div className="space-y-2">
-                <Select 
-                  value={`${selectedYear}-${selectedMonth}`} 
-                  onValueChange={(value) => {
-                    const [year, month] = value.split('-');
-                    setSelectedYear(year);
-                    setSelectedMonth(month);
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a data period" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableMonths.map((period) => (
-                      <SelectItem 
-                        key={`${period.year}-${period.month}`} 
-                        value={`${period.year}-${period.month}`}
-                      >
-                        <div className="flex items-center justify-between w-full">
-                          <span>{period.displayName}</span>
-                          <Badge variant="secondary" className="ml-2 text-xs">
-                            {period.year === new Date().getFullYear() && 
-                             period.month === new Date().getMonth() + 1 ? 'Current' : 'Historical'}
-                          </Badge>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span>
-                    Analyzing data for <strong>{getMonthName(parseInt(selectedMonth))} {selectedYear}</strong>
-                  </span>
-                  {currentSessionId && (
-                    <span className="text-blue-600">
-                      Session: {currentSessionId}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-4">
-                <AlertCircle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-600 mb-2">No financial data available</p>
-                <p className="text-xs text-gray-500">Upload your bank statements to get started</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={loadAvailableMonths}
-                  className="mt-2"
-                >
-                  Refresh
-                </Button>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Enhanced Chat Interface with History Support */}
-      <Card className="flex-1 flex flex-col shadow-lg">
-        <CardHeader className="flex flex-row items-center justify-between border-b">
-          <CardTitle className="flex items-center">
-            <Bot className="mr-2 h-5 w-5 text-blue-600" />
-            AI Financial Advisor
-            {connectionStatus === 'connected' && (
-              <div className="ml-2 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            )}
-            {historyLength > 0 && (
-              <Badge variant="outline" className="ml-2 text-xs">
-                History: {historyLength}
-              </Badge>
-            )}
-          </CardTitle>
-          <Button variant="outline" size="sm" onClick={clearChat}>
-            <Trash2 className="h-4 w-4 mr-1" />
-            Clear Chat
-          </Button>
-        </CardHeader>
-        
-        <CardContent className="flex-1 flex flex-col p-0">
-          <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-            <div className="space-y-4">
-              {messages.map(msg => (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div className={`flex items-start space-x-3 max-w-[85%] ${msg.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      msg.type === 'bot' 
-                        ? msg.error 
-                          ? 'bg-red-100 text-red-600' 
-                          : 'bg-blue-100 text-blue-600'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      {msg.type === 'bot' && msg.error && <AlertCircle className="h-4 w-4" />}
-                      {msg.type === 'bot' && !msg.error && <Bot className="h-4 w-4" />}
-                      {msg.type === 'user' && <User className="h-4 w-4" />}
-                    </div>
-                    <div className={`rounded-2xl p-4 shadow-sm ${
-                      msg.type === 'user' 
-                        ? 'bg-blue-600 text-white' 
-                        : msg.error
-                          ? 'bg-red-50 text-red-900 border border-red-200'
-                          : 'bg-white text-gray-900 border border-gray-200'
-                    }`} style={{ maxWidth: '100%', wordBreak: 'break-word' }}>
-                      <MessageContent 
-                        content={msg.content} 
-                        isBot={msg.type === 'bot'} 
-                        hasError={msg.error} 
-                      />
-                      <div className={`text-xs mt-2 ${
-                        msg.type === 'user' ? 'text-blue-100' : 'text-gray-500'
-                      }`}>
-                        {msg.timestamp.toLocaleTimeString()}
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-              
-              {isTyping && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex justify-start"
-                >
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
-                      <Bot className="h-4 w-4" />
-                    </div>
-                    <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </div>
-          </ScrollArea>
-
-          {/* Quick Questions */}
-          {messages.length === 1 && availableMonths.length > 0 && (
-            <div className="p-4 border-t bg-gray-50">
-              <p className="text-sm text-gray-600 mb-3 font-medium">Quick questions to get started:</p>
-              <div className="flex flex-wrap gap-2">
-                {quickQuestions.map((question, idx) => (
-                  <Button
-                    key={idx}
-                    variant="outline"
-                    onClick={() => handleQuickQuestion(question)}
-                    className="text-xs bg-white hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300"
-                    disabled={isTyping || connectionStatus === 'disconnected'}
-                  >
-                    {question}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Enhanced Input Area */}
-          <div className="p-4 border-t bg-white">
-            <div className="flex space-x-3">
-              <Input
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder={availableMonths.length > 0 
-                  ? "Ask about your finances, investments, or spending patterns..." 
-                  : "Please upload financial data first to start chatting..."
-                }
-                onKeyPress={(e) => e.key === 'Enter' && !isTyping && handleSendMessage()}
-                className="flex-1 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                disabled={isTyping || connectionStatus === 'disconnected' || availableMonths.length === 0}
-              />
               <Button 
-                onClick={handleSendMessage} 
-                disabled={isTyping || !inputValue.trim() || connectionStatus === 'disconnected' || availableMonths.length === 0}
-                className="bg-blue-600 hover:bg-blue-700"
+                variant="outline" 
+                size="sm" 
+                onClick={checkConnection}
+                className="ml-4"
               >
-                {isTyping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                Retry
               </Button>
             </div>
-            
-            {connectionStatus === 'disconnected' && (
-              <p className="text-xs text-red-600 mt-2">
-                Backend server not available. Please start the server with: uvicorn app:app --reload
-              </p>
-            )}
-            
-            {availableMonths.length === 0 && !isLoadingMonths && (
-              <p className="text-xs text-amber-600 mt-2">
-                No financial data available. Please upload your bank statements first.
-              </p>
+          </Alert>
+        </motion.div>
+      )}
+
+      {/* Enhanced Data Period Selection */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <Card className="border-l-4 border-l-primary shadow-lg">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center justify-between text-base">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Calendar className="h-5 w-5 text-primary" />
+                </div>
+                <span className="font-semibold">Analysis Period</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                {historyLength > 0 && (
+                  <Badge variant="secondary" className="flex items-center gap-1.5 px-3 py-1">
+                    <History className="h-3.5 w-3.5" />
+                    <span className="font-medium">{historyLength} messages</span>
+                  </Badge>
+                )}
+                <Badge variant="outline" className="px-3 py-1 border-primary/30">
+                  {availableMonths.length} {availableMonths.length === 1 ? 'period' : 'periods'}
+                </Badge>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {isLoadingMonths ? (
+                <div className="flex items-center space-x-3 text-sm text-muted-foreground p-4 bg-muted/30 rounded-xl">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Loading available periods...</span>
+                </div>
+              ) : availableMonths.length > 0 ? (
+                <div className="space-y-3">
+                  <Select 
+                    value={`${selectedYear}-${selectedMonth}`} 
+                    onValueChange={(value) => {
+                      const [year, month] = value.split('-');
+                      setSelectedYear(year);
+                      setSelectedMonth(month);
+                    }}
+                  >
+                    <SelectTrigger className="w-full h-12 rounded-xl border-border/50 bg-background/50 backdrop-blur-sm hover:border-primary/50 transition-all">
+                      <SelectValue placeholder="Select a data period" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {availableMonths.map((period) => (
+                        <SelectItem 
+                          key={`${period.year}-${period.month}`} 
+                          value={`${period.year}-${period.month}`}
+                          className="rounded-lg"
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <span className="font-medium">{period.displayName}</span>
+                            <Badge variant="secondary" className="ml-3 text-xs">
+                              {period.year === new Date().getFullYear() && 
+                               period.month === new Date().getMonth() + 1 ? 'Current' : 'Past'}
+                            </Badge>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex items-center justify-between text-sm px-1">
+                    <span className="text-muted-foreground">
+                      Analyzing <strong className="text-foreground">{getMonthName(parseInt(selectedMonth))} {selectedYear}</strong>
+                    </span>
+                    {currentSessionId && (
+                      <span className="text-xs text-primary/70 font-mono">
+                        {currentSessionId}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 px-4">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-muted/30 flex items-center justify-center">
+                    <AlertCircle className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-medium text-foreground mb-1">No financial data available</p>
+                  <p className="text-xs text-muted-foreground mb-4">Upload your bank statements to get started</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={loadAvailableMonths}
+                    className="rounded-xl"
+                  >
+                    Refresh
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Enhanced Chat Interface */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="flex-1 flex flex-col"
+      >
+        <Card className="flex-1 flex flex-col shadow-xl border-border/50 overflow-hidden">
+          <CardHeader className="border-b border-border/50 bg-card/30 backdrop-blur-sm">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 shadow-lg">
+                  <Bot className="h-6 w-6 text-primary" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-lg font-bold">AI Financial Advisor</span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {connectionStatus === 'connected' && (
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                        <span className="text-xs text-green-600 font-medium">Online</span>
+                      </div>
+                    )}
+                    {historyLength > 0 && (
+                      <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                        {historyLength} msgs
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </CardTitle>
+              <Button variant="outline" size="sm" onClick={clearChat} className="rounded-xl gap-2">
+                <Trash2 className="h-4 w-4" />
+                Clear
+              </Button>
+            </div>
+          </CardHeader>
+          
+          <CardContent className="flex-1 flex flex-col p-0 bg-gradient-to-b from-background/50 to-muted/10">
+            <ScrollArea className="flex-1 p-6" ref={scrollAreaRef}>
+              <div className="space-y-6 max-w-4xl mx-auto">
+                {messages.map(msg => (
+                  <motion.div
+                    key={msg.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className={`flex gap-4 ${msg.type === 'user' ? 'flex-row-reverse' : ''}`}
+                  >
+                    {/* Avatar */}
+                    <div className={`flex-shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg ${
+                      msg.type === 'user' 
+                        ? 'bg-gradient-to-br from-primary to-primary-glow' 
+                        : msg.error 
+                          ? 'bg-gradient-to-br from-destructive/20 to-destructive/10 border border-destructive/30'
+                          : 'bg-gradient-to-br from-accent to-accent-glow'
+                    }`}>
+                      {msg.type === 'user' ? (
+                        <User className="h-5 w-5 text-white" />
+                      ) : (
+                        <Bot className={`h-5 w-5 ${msg.error ? 'text-destructive' : 'text-white'}`} />
+                      )}
+                    </div>
+
+                    {/* Message Bubble */}
+                    <div className={`flex-1 max-w-3xl ${msg.type === 'user' ? 'flex justify-end' : ''}`}>
+                      <div className={`rounded-2xl px-5 py-4 shadow-md backdrop-blur-sm transition-all hover:shadow-lg ${
+                        msg.type === 'user'
+                          ? 'bg-gradient-to-br from-primary to-primary-glow text-white'
+                          : msg.error
+                            ? 'bg-destructive/10 border-2 border-destructive/20'
+                            : 'bg-card/80 border border-border/50'
+                      }`}>
+                        <MessageContent content={msg.content} isBot={msg.type === 'bot'} hasError={msg.error} />
+                        <div className={`text-xs mt-2.5 flex items-center gap-1.5 ${
+                          msg.type === 'user' ? 'text-primary-foreground/70 justify-end' : 'text-muted-foreground'
+                        }`}>
+                          <span>{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+                
+                {isTyping && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex gap-4"
+                  >
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-accent to-accent-glow flex items-center justify-center shadow-lg">
+                      <Bot className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl px-5 py-4 shadow-md">
+                      <div className="flex space-x-2">
+                        <div className="w-2.5 h-2.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <div className="w-2.5 h-2.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <div className="w-2.5 h-2.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            </ScrollArea>
+
+            {/* Quick Questions */}
+            {messages.length === 1 && (
+              <div className="px-6 py-4 border-t border-border/50 bg-muted/20">
+                <p className="text-xs text-muted-foreground mb-3 font-semibold uppercase tracking-wide">Quick questions:</p>
+                <div className="flex flex-wrap gap-2">
+                  {quickQuestions.map((question, idx) => (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: idx * 0.05 }}
+                    >
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleQuickQuestion(question)}
+                        className="text-xs rounded-xl hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all"
+                      >
+                        {question}
+                      </Button>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
             )}
 
-            {historyLength > 0 && (
-              <p className="text-xs text-blue-600 mt-2">
-                Conversation history maintained across messages for this period ({historyLength} messages stored)
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            {/* Input Area */}
+            <div className="p-6 border-t border-border/50 bg-card/30 backdrop-blur-sm">
+              <div className="flex gap-3">
+                <Input
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                  placeholder="Ask me anything about your finances..."
+                  disabled={isTyping || connectionStatus === 'disconnected'}
+                  className="flex-1 h-12 rounded-xl border-border/50 bg-background/80 backdrop-blur-sm focus:border-primary/50 transition-all px-4"
+                />
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!inputValue.trim() || isTyping || connectionStatus === 'disconnected'}
+                  size="icon"
+                  className="h-12 w-12 rounded-xl shadow-md hover:shadow-lg transition-all"
+                >
+                  {isTyping ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Send className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 }
