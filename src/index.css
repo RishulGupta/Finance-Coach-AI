@@ -8,67 +8,72 @@ All colors MUST be HSL for consistent theming.
 
 @layer base {
   :root {
-    /* Premium Dark Theme - Balanced & Professional */
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    /* CRED-Inspired Premium Dark Theme - Smooth & Minimal */
+    --background: 222 47% 8%;
+    --foreground: 0 0% 98%;
 
-    /* Card and surface colors - Subtle elevation */
-    --card: 222 39% 15%;
-    --card-foreground: 210 40% 98%;
+    /* Card surfaces - Elevated & Glassy */
+    --card: 222 47% 11%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 222 39% 15%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 0 0% 98%;
 
-    /* Primary brand colors - Vibrant Blue */
+    /* Primary - Elegant Blue/Purple Gradient Base */
     --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
     --primary-glow: 217 91% 70%;
 
-    /* Secondary colors - Success Green */
-    --secondary: 142 76% 36%;
+    /* Secondary - Sophisticated Green */
+    --secondary: 142 71% 45%;
     --secondary-foreground: 0 0% 100%;
-    --secondary-glow: 142 76% 46%;
+    --secondary-glow: 142 71% 55%;
 
-    /* Muted colors for subtle elements */
-    --muted: 217 19% 22%;
-    --muted-foreground: 215 20% 70%;
+    /* Muted - Subtle & Refined */
+    --muted: 217 19% 18%;
+    --muted-foreground: 217 10% 64%;
 
-    /* Accent colors - Premium Purple */
+    /* Accent - Premium Purple */
     --accent: 262 83% 58%;
     --accent-foreground: 0 0% 100%;
     --accent-glow: 262 83% 68%;
 
-    /* Destructive/Error colors */
-    --destructive: 0 84% 60%;
+    /* Destructive - Soft Red */
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Border and input colors */
-    --border: 217 19% 24%;
-    --input: 217 19% 24%;
+    /* Borders & Inputs - Minimal */
+    --border: 217 19% 18%;
+    --input: 217 19% 18%;
     --ring: 217 91% 60%;
 
-    /* Premium gradients for visual appeal */
+    /* Premium Gradients - CRED Style */
     --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(262 83% 58%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(142 76% 36%) 0%, hsl(142 76% 46%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(142 71% 45%) 0%, hsl(142 71% 55%) 100%);
     --gradient-accent: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(217 91% 60%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(222 39% 15%) 0%, hsl(222 39% 17%) 100%);
-    --gradient-background: linear-gradient(180deg, hsl(222 47% 11%) 0%, hsl(222 47% 9%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(222 47% 12%) 0%, hsl(222 47% 10%) 100%);
+    --gradient-background: radial-gradient(ellipse at top, hsl(222 47% 12%), hsl(222 47% 8%));
     --gradient-hero: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(262 83% 58%) 50%, hsl(217 91% 70%) 100%);
+    --gradient-mesh: radial-gradient(at 40% 20%, hsl(217 91% 60% / 0.15) 0px, transparent 50%),
+                     radial-gradient(at 80% 80%, hsl(262 83% 58% / 0.15) 0px, transparent 50%);
 
-    /* Premium shadows for depth */
-    --shadow-xs: 0 1px 2px hsl(0 0% 0% / 0.2);
-    --shadow-sm: 0 2px 8px hsl(0 0% 0% / 0.25);
-    --shadow-md: 0 4px 16px hsl(0 0% 0% / 0.3);
-    --shadow-lg: 0 8px 32px hsl(0 0% 0% / 0.35);
-    --shadow-xl: 0 16px 48px hsl(0 0% 0% / 0.4);
-    --shadow-glow: 0 0 24px hsl(217 91% 70% / 0.3);
+    /* Elegant Shadows - Soft & Deep */
+    --shadow-xs: 0 1px 2px hsl(0 0% 0% / 0.12);
+    --shadow-sm: 0 2px 8px hsl(0 0% 0% / 0.16);
+    --shadow-md: 0 4px 16px hsl(0 0% 0% / 0.20);
+    --shadow-lg: 0 8px 32px hsl(0 0% 0% / 0.24);
+    --shadow-xl: 0 16px 48px hsl(0 0% 0% / 0.28);
+    --shadow-glow: 0 0 40px hsl(217 91% 70% / 0.20);
+    --shadow-glow-accent: 0 0 40px hsl(262 83% 68% / 0.20);
 
-    /* Animation durations */
+    /* Smooth Animations */
     --transition-fast: 150ms;
-    --transition-normal: 250ms;
-    --transition-slow: 400ms;
+    --transition-normal: 300ms;
+    --transition-slow: 500ms;
+    --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
     --sidebar-background: 0 0% 98%;
 
@@ -134,24 +139,39 @@ All colors MUST be HSL for consistent theming.
   }
 
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground font-sans antialiased;
     background: var(--gradient-background);
+    background-attachment: fixed;
     min-height: 100vh;
+    overflow-x: hidden;
+  }
+  
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--gradient-mesh);
+    z-index: 0;
+    pointer-events: none;
   }
 }
 
 @layer components {
-  /* Premium Financial Dashboard Components */
+  /* CRED-Inspired Components - Smooth & Premium */
   .financial-card {
-    @apply bg-card border border-border rounded-xl p-6;
-    background: var(--gradient-card);
-    box-shadow: var(--shadow-sm);
-    transition: all var(--transition-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    @apply bg-card/50 backdrop-blur-xl border border-border/50 rounded-2xl p-6;
+    background: linear-gradient(145deg, hsl(222 47% 12% / 0.8) 0%, hsl(222 47% 10% / 0.6) 100%);
+    box-shadow: var(--shadow-sm), inset 0 1px 0 hsl(0 0% 100% / 0.05);
+    transition: all var(--transition-normal) var(--ease-smooth);
   }
 
   .financial-card:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg), inset 0 1px 0 hsl(0 0% 100% / 0.08);
+    transform: translateY(-2px);
+    border-color: hsl(var(--border) / 0.8);
   }
 
   .metric-card {
@@ -166,8 +186,17 @@ All colors MUST be HSL for consistent theming.
     top: 0;
     left: 0;
     right: 0;
-    height: 3px;
+    height: 2px;
     background: var(--gradient-primary);
+    opacity: 0.6;
+  }
+  
+  .metric-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top right, hsl(217 91% 60% / 0.05), transparent 60%);
+    pointer-events: none;
   }
 
   .gradient-primary {
@@ -200,13 +229,31 @@ All colors MUST be HSL for consistent theming.
 
   .chart-container {
     @apply financial-card p-6;
-    min-height: 400px;
+    min-height: 420px;
   }
 
   .glass-effect {
-    background: hsl(var(--card) / 0.7);
-    backdrop-filter: blur(12px);
-    border: 1px solid hsl(var(--border) / 0.5);
+    background: hsl(var(--card) / 0.5);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid hsl(var(--border) / 0.3);
+  }
+  
+  .premium-button {
+    @apply relative overflow-hidden;
+    transition: all var(--transition-normal) var(--ease-smooth);
+  }
+  
+  .premium-button::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent, hsl(0 0% 100% / 0.1), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s;
+  }
+  
+  .premium-button:hover::before {
+    transform: translateX(100%);
   }
 }
 
@@ -226,33 +273,44 @@ All colors MUST be HSL for consistent theming.
   }
 }
 
-/* Premium Animations */
+/* Smooth Premium Animations */
 @keyframes float {
   0%, 100% {
-    transform: translateY(0px) scale(1);
+    transform: translateY(0px);
   }
   50% {
-    transform: translateY(-12px) scale(1.02);
+    transform: translateY(-8px);
   }
 }
 
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 24px hsl(var(--primary-glow) / 0.25);
+    box-shadow: 0 0 20px hsl(var(--primary-glow) / 0.2), 0 0 40px hsl(var(--primary-glow) / 0.1);
   }
   50% {
-    box-shadow: 0 0 48px hsl(var(--primary-glow) / 0.5);
+    box-shadow: 0 0 30px hsl(var(--primary-glow) / 0.3), 0 0 60px hsl(var(--primary-glow) / 0.15);
   }
 }
 
 @keyframes slide-up {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
@@ -262,5 +320,25 @@ All colors MUST be HSL for consistent theming.
   }
   100% {
     background-position: 1000px 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
