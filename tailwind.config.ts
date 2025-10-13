@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
+import animatePlugin from "tailwindcss-animate";
 
-export default {
+const config: Config = {
   darkMode: ["class"],
   content: [
     "./pages/**/*.{ts,tsx}",
@@ -8,7 +9,6 @@ export default {
     "./app/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
   ],
-  prefix: "",
   theme: {
     container: {
       center: true,
@@ -19,19 +19,19 @@ export default {
     },
     extend: {
       colors: {
-        border: "rgba(255,255,255,0.08)", // softer translucent border
+        border: "rgba(255,255,255,0.08)",
         input: "rgba(255,255,255,0.1)",
         ring: "#00ffa3",
-        background: "#0d0d0d", // slightly darker than before
+        background: "#0d0d0d",
         foreground: "#f5f5f5",
 
         primary: {
-          DEFAULT: "#00ffa3", // Neon emerald accent
+          DEFAULT: "#00ffa3", // neon emerald
           foreground: "#0d0d0d",
           glow: "rgba(0,255,163,0.35)",
         },
         secondary: {
-          DEFAULT: "#00bfff", // Electric cyan-blue
+          DEFAULT: "#00bfff", // electric cyan
           foreground: "#ffffff",
           glow: "rgba(0,191,255,0.35)",
         },
@@ -41,10 +41,10 @@ export default {
         },
         muted: {
           DEFAULT: "rgba(255,255,255,0.08)",
-          foreground: "rgba(255,255,255,0.6)", // soft muted text
+          foreground: "rgba(255,255,255,0.6)",
         },
         accent: {
-          DEFAULT: "#00e0ff", // radiant turquoise glow
+          DEFAULT: "#00e0ff", // turquoise glow
           foreground: "#ffffff",
           glow: "rgba(0,224,255,0.35)",
         },
@@ -53,7 +53,7 @@ export default {
           foreground: "#ffffff",
         },
         card: {
-          DEFAULT: "rgba(20,20,20,0.65)", // deeper glass — no white tint
+          DEFAULT: "rgba(20,20,20,0.65)",
           foreground: "#fafafa",
         },
         sidebar: {
@@ -87,32 +87,14 @@ export default {
           to: { height: "var(--radix-accordion-content-height)", opacity: "1" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-            opacity: "1",
-          },
+          from: { height: "var(--radix-accordion-content-height)", opacity: "1" },
           to: { height: "0", opacity: "0" },
         },
-        "fade-in": {
-          from: { opacity: "0" },
-          to: { opacity: "1" },
-        },
-        "slide-up": {
-          from: { opacity: "0", transform: "translateY(16px)" },
-          to: { opacity: "1", transform: "translateY(0)" },
-        },
-        "slide-in": {
-          from: { opacity: "0", transform: "translateX(-16px)" },
-          to: { opacity: "1", transform: "translateX(0)" },
-        },
-        "scale-in": {
-          from: { opacity: "0", transform: "scale(0.95)" },
-          to: { opacity: "1", transform: "scale(1)" },
-        },
-        shimmer: {
-          "0%": { backgroundPosition: "-1000px 0" },
-          "100%": { backgroundPosition: "1000px 0" },
-        },
+        "fade-in": { from: { opacity: "0" }, to: { opacity: "1" } },
+        "slide-up": { from: { opacity: "0", transform: "translateY(16px)" }, to: { opacity: "1", transform: "translateY(0)" } },
+        "slide-in": { from: { opacity: "0", transform: "translateX(-16px)" }, to: { opacity: "1", transform: "translateX(0)" } },
+        "scale-in": { from: { opacity: "0", transform: "scale(0.95)" }, to: { opacity: "1", transform: "scale(1)" } },
+        shimmer: { "0%": { backgroundPosition: "-1000px 0" }, "100%": { backgroundPosition: "1000px 0" } },
       },
 
       animation: {
@@ -139,5 +121,7 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [animatePlugin],
 } satisfies Config;
+
+export default config;
