@@ -1,73 +1,226 @@
-# Welcome to your Lovable project
+# 💰 AI-Powered Financial Management System
 
-## Project info
+A **comprehensive, production-ready financial management platform** that seamlessly integrates **React (frontend)**, **FastAPI (backend)**, and **AI-driven insights** to deliver intelligent, data-backed financial decisions.
 
-**URL**: https://lovable.dev/projects/7812e515-8eee-4793-82cc-7d31d2a3fdc6
+---
 
-## How can I edit this code?
+## 🌟 Key Highlights
 
-There are several ways of editing your application.
+### 🔹 Intelligent Financial Management
+- **Automated Data Uploads**: Import CSV or Excel statements effortlessly.
+- **AI Categorization**: Smart transaction classification using NLP models.
+- **Interactive Dashboard**: Real-time visual analytics and financial KPIs.
+- **Multi-Period Analysis**: Compare spending across months or years.
+- **Advanced Search & Filters**: Quickly locate transactions by category, keyword, or date.
 
-**Use Lovable**
+### 🤖 AI & Analytics Engine
+- **Chat-Based Financial Advisor**: Query your data in natural language.
+- **Spending Insights**: Get AI summaries of your financial health.
+- **Smart Budgeting**: Personalized budget recommendations.
+- **Investment Advisory**: Tailored stock and IPO suggestions using CrewAI agents.
+- **Trend Forecasting**: Pattern recognition for predictive insights.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/7812e515-8eee-4793-82cc-7d31d2a3fdc6) and start prompting.
+### 💼 Investment Intelligence
+- **IPO Alerts**: Real-time updates on relevant IPOs.
+- **Portfolio Recommendations**: Risk-adjusted stock suggestions.
+- **Financial Risk Assessment**: Evaluate and balance your investment risk.
 
-Changes made via Lovable will be committed automatically to this repo.
+### ⚙️ Engineering Excellence
+- **Responsive Design** with Shadcn/UI components.
+- **Real-Time Data Sync** between frontend and backend.
+- **Persistent Chat Memory** per financial period.
+- **Firebase Integration** for secure data management.
+- **Optimized Caching & Performance** for large datasets.
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🏗️ System Overview
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+**Frontend**: React + TypeScript + Shadcn/UI  
+**Backend**: FastAPI (Python 3.8+)  
+**Database**: Firebase Firestore  
+**AI Layer**: OpenAI + CrewAI Agents  
+**Hosting**: Vercel (Frontend) / Railway or DigitalOcean (Backend)
 
-Follow these steps:
+---
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 🚀 Quick Start
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Prerequisites
+- Node.js 18+  
+- Python 3.8+  
+- Firebase Project  
+- API keys (OpenAI, CrewAI)
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+### 1️⃣ Clone Repository
+```bash
+git clone <your-repo-url>
+cd financial-management-system
 ```
 
-**Edit a file directly in GitHub**
+### 2️⃣ Frontend Setup
+```bash
+cd src
+npm install     # or pnpm install
+cp .env.example .env.local
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Configure:
+```bash
+VITE_API_BASE_URL=http://localhost:8000
+VITE_FIREBASE_CONFIG=your_firebase_config
+```
 
-**Use GitHub Codespaces**
+### 3️⃣ Backend Setup
+```bash
+cd src/backend
+python -m venv venv
+source venv/bin/activate      # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Backend `.env` example:
+```bash
+OPENAI_API_KEY=your_openai_key
+CREWAI_API_KEY=your_crewai_key
+FIREBASE_PROJECT_ID=your_project_id
+DEBUG=True
+```
 
-## What technologies are used for this project?
+### 4️⃣ Run Application
 
-This project is built with:
+**Start Backend:**
+```bash
+cd src/backend
+uvicorn app:app --reload --port 8000
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+**Start Frontend:**
+```bash
+npm run dev
+# Opens http://localhost:5173
+```
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/7812e515-8eee-4793-82cc-7d31d2a3fdc6) and click on Share -> Publish.
+## 📁 Project Structure
 
-## Can I connect a custom domain to my Lovable project?
+```
+src/
+├── backend/            # FastAPI backend
+│   ├── app.py          # Entry point
+│   ├── chat_api.py     # Chat endpoints
+│   ├── insights_generator.py
+│   ├── firebase_helper.py
+│   ├── crewagent/      # CrewAI agents
+│   └── requirements.txt
+├── components/         # React UI components
+├── lib/                # Utilities and types
+├── pages/              # Main pages
+├── hooks/              # Custom hooks
+└── main.tsx            # React entry
+```
 
-Yes, you can!
+---
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 🔌 API Overview
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+| Endpoint | Description |
+|-----------|--------------|
+| `POST /api/upload` | Upload financial data |
+| `GET /api/data/{year}/{month}` | Retrieve monthly insights |
+| `POST /api/chat` | Query AI financial assistant |
+| `GET /api/insights/{year}/{month}` | AI-generated insights |
+| `GET /api/recommendations/ipo` | IPO alerts |
+| `POST /api/recommendations/stocks` | Stock recommendations |
+
+---
+
+## 🧠 Development Standards
+
+### Code Quality
+- **Frontend**: ESLint + Prettier  
+- **Backend**: Black + isort  
+- **TypeScript**: Strict mode enabled
+
+### Testing
+```bash
+# Frontend
+npm run test
+
+# Backend
+pytest
+```
+
+### Linting
+```bash
+npm run lint
+black . && isort . && flake8 .
+```
+
+---
+
+## 🔒 Security & Compliance
+
+- Environment-based API keys  
+- Proper CORS setup  
+- Input validation and sanitization  
+- Secure Firebase rules  
+- File upload limits and validation  
+
+---
+
+## 🌐 Deployment
+
+### Frontend
+- Deploy via **Vercel** or **Netlify**
+- Build command: `npm run build`
+
+### Backend
+- Deploy to **Railway**, **Heroku**, or **DigitalOcean**
+- Start command:
+  ```bash
+  uvicorn app:app --host 0.0.0.0 --port $PORT
+  ```
+
+### Docker (Optional)
+```dockerfile
+FROM python:3.9-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+---
+
+## 🤝 Contributing
+
+1. Fork this repository  
+2. Create a new branch (`feature/your-feature`)  
+3. Commit and push changes  
+4. Submit a Pull Request  
+
+---
+
+## 📝 License
+
+This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
+
+---
+
+## 💡 Future Enhancements
+
+- Mobile app (React Native)
+- Bank API integrations
+- Multi-currency support
+- Predictive ML models
+- Automated bill tracking
+- Advanced portfolio analytics
+
+---
+
+**Built with precision and intelligence by the Financial Management Team.**  
+_Your all-in-one AI-powered financial control center._
