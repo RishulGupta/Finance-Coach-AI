@@ -1,0 +1,98 @@
+# Core FastAPI and Web Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Data Processing and Analysis
+pandas==2.1.3
+numpy==1.24.3
+openpyxl==3.1.2
+
+# Database and Storage
+firebase-admin==6.2.0
+python-firebase==1.2
+
+# AI and Machine Learning
+openai==1.3.7
+langchain==0.0.340
+langchain-openai==0.0.2
+crewai==0.28.8
+crewai-tools==0.1.6
+
+# HTTP and API Clients
+httpx==0.25.2
+requests==2.31.0
+aiohttp==3.9.1
+
+# Environment and Configuration
+python-dotenv==1.0.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Date and Time Processing
+python-dateutil==2.8.2
+
+# Logging and Monitoring
+structlog==23.2.0
+
+# Development and Testing (optional)
+pytest==7.4.3
+pytest-asyncio==0.21.1
+black==23.11.0
+isort==5.12.0
+flake8==6.1.0
+
+# Production Server (optional)
+gunicorn==21.2.0
+
+# Additional AI/ML Dependencies
+tiktoken==0.5.1
+chromadb==0.4.17
+sentence-transformers==2.2.2
+
+# Web Scraping (for investment data)
+beautifulsoup4==4.12.2
+selenium==4.15.2
+
+# Async Support
+asyncio==3.4.3
+aiofiles==23.2.1
+
+# Data Validation and Serialization
+marshmallow==3.20.1
+jsonschema==4.20.0
+
+# Caching
+redis==5.0.1
+python-redis==0.1.4
+
+# Security
+cryptography==41.0.7
+passlib==1.7.4
+python-jose[cryptography]==3.3.0
+
+# File Processing
+PyPDF2==3.0.1
+python-magic==0.4.27
+
+# Financial Data Processing
+yfinance==0.2.22
+alpha-vantage==2.3.1
+
+# Natural Language Processing
+nltk==3.8.1
+spacy==3.7.2
+
+# Visualization (if needed for backend processing)
+matplotlib==3.8.2
+plotly==5.17.0
+
+# Memory Management
+psutil==5.9.6
+
+# Configuration Management
+dynaconf==3.2.4
+
+# API Documentation
+sphinx==7.2.6
+sphinx-rtd-theme==1.3.0
