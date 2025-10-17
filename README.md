@@ -1,6 +1,6 @@
 # 💰 AI-Powered Financial Management System
 
-A **comprehensive, production-ready financial management platform** that seamlessly integrates **React (frontend)**, **FastAPI (backend)**, and **AI-driven insights** to deliver intelligent, data-backed financial decisions.
+A **comprehensive, production-ready financial management platform** that seamlessly integrates **React (frontend)**, **FastAPI (backend)**, and **AI-driven insights** to deliver intelligent, data-backed financial decisions. 
 
 ---
 
