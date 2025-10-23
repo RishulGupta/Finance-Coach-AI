@@ -6,6 +6,17 @@ It helps you **track expenses, understand spending patterns, chat with an AI fin
 Whether you want to analyze your monthly spending, compare habits over time, or receive investment recommendations, **Finance Coach AI** does it all with **clarity, precision, and ease**.  
 
 ---
+<p align="center">
+  <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
+    <img src="https://github.com/RishulGupta/Finance-Coach-AI/blob/2fd9b9bd42434f63412ddff6d34ea23a0a28940e/Screenshot%202025-10-24%20005818.png" style="width:48%; height:300px; object-fit: cover;" />
+    <img src="https://github.com/RishulGupta/Finance-Coach-AI/blob/2fd9b9bd42434f63412ddff6d34ea23a0a28940e/Screenshot%202025-10-24%20005921.png" style="width:48%; height:300px; object-fit: cover;" />
+    <img src="https://github.com/RishulGupta/Finance-Coach-AI/blob/2fd9b9bd42434f63412ddff6d34ea23a0a28940e/Screenshot%202025-10-24%20010124.png" style="width:48%; height:300px; object-fit: cover;" />
+    <img src="https://github.com/RishulGupta/Finance-Coach-AI/blob/2fd9b9bd42434f63412ddff6d34ea23a0a28940e/Screenshot%202025-10-24%20010151.png" style="width:48%; height:300px; object-fit: cover;" />
+  </div>
+</p>
+
+
+
 
 ## 🌟 Key Features  
 
