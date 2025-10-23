@@ -57,7 +57,7 @@ Dive deeper into your financial behavior with:
 
 ### 1️⃣ Clone Repository  
 ```bash
-git clone <your-repo-url>
+git clone <https://github.com/RishulGupta/Finance-Coach-AI.git>
 cd financial-management-system
 ```
 
