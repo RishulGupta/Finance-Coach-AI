@@ -1,6 +1,9 @@
 # 💰 Finance Coach AI 
 
-A **comprehensive, production-ready financial management platform** that seamlessly integrates **React (frontend)**, **FastAPI (backend)**, and **AI-driven insights** to deliver intelligent, data-backed financial decisions. 
+**Finance Coach AI** is an intelligent personal finance management platform that combines real-time financial analytics, visualization, and conversational AI assistance.  
+It helps users **track expenses**, **analyze spending patterns**, and **receive AI-driven insights** — all within a clean, modern dashboard experience.
+
+The app automatically learns your habits, visualizes where your money goes, and even acts as a personal advisor that answers your financial questions.
 
 ---
 
