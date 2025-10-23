@@ -1,81 +1,89 @@
-# 💰 Finance Coach AI 
+# 💰 Finance Coach AI  
+Finance Coach AI is an **intelligent, all-in-one financial management platform** that transforms your bank statements into actionable insights.  
 
-**Finance Coach AI** is an intelligent personal finance management platform that combines real-time financial analytics, visualization, and conversational AI assistance.  
-It helps users **track expenses**, **analyze spending patterns**, and **receive AI-driven insights** — all within a clean, modern dashboard experience.
+It helps you **track expenses, understand spending patterns, chat with an AI financial advisor**, and make **smarter investment and budgeting decisions** — all from one intuitive dashboard.  
 
-The app automatically learns your habits, visualizes where your money goes, and even acts as a personal advisor that answers your financial questions.
+Whether you want to analyze your monthly spending, compare habits over time, or receive investment recommendations, **Finance Coach AI** does it all with **clarity, precision, and ease**.  
 
 ---
 
-## 🌟 Key Highlights
+## 🌟 Key Features  
 
-### 🔹 Intelligent Financial Management
-- **Automated Data Uploads**: Import CSV or Excel statements effortlessly.
-- **AI Categorization**: Smart transaction classification using NLP models.
-- **Interactive Dashboard**: Real-time visual analytics and financial KPIs.
-- **Multi-Period Analysis**: Compare spending across months or years.
-- **Advanced Search & Filters**: Quickly locate transactions by category, keyword, or date.
+### 📤 Upload Center  
+- **Effortlessly upload** bank statements in **CSV or Excel** formats.  
+- **Automatically parses and classifies** transactions using **AI-driven categorization**.  
+- **Securely stores** and syncs data across sessions with **Firebase Firestore**.  
 
-### 🤖 AI & Analytics Engine
-- **Chat-Based Financial Advisor**: Query your data in natural language.
-- **Spending Insights**: Get AI summaries of your financial health.
-- **Smart Budgeting**: Personalized budget recommendations.
-- **Investment Advisory**: Tailored stock and IPO suggestions using CrewAI agents.
-- **Trend Forecasting**: Pattern recognition for predictive insights.
+### 📊 Financial Dashboard  
+A **visually rich and data-driven dashboard** to understand your financial journey:  
+- **Total Income & Spending:** Instant monthly summaries.  
+- **Spending Analysis:** Bar and pie charts showing spending distribution.  
+- **Category Breakdown:** AI-organized categories (Food, Transport, Subscriptions, etc.).  
+- **Multi-Period Comparison:** View spending, income, and transaction trends over time.  
+- **Smart KPIs:** Track highest spend, average spend, and category diversity.  
 
-### 💼 Investment Intelligence
-- **IPO Alerts**: Real-time updates on relevant IPOs.
-- **Portfolio Recommendations**: Risk-adjusted stock suggestions.
-- **Financial Risk Assessment**: Evaluate and balance your investment risk.
+### 🧠 AI Financial Advisor  
+A **conversational assistant** that helps you make sense of your money:  
+- **Ask in Natural Language:**  
+  - *"What did I spend the most on this month?"*  
+  - *"Give me investment recommendations."*  
+  - *"How does my spending compare to last month?"*  
+- **Real-Time Analysis:** Uses your **actual uploaded data** for contextual responses.  
+- **Investment Advisory:** **Personalized recommendations** based on your financial habits and goals.  
+- **Quick Prompts:** Ready-made templates for instant insights.  
 
-### ⚙️ Engineering Excellence
-- **Responsive Design** with Shadcn/UI components.
-- **Real-Time Data Sync** between frontend and backend.
-- **Persistent Chat Memory** per financial period.
-- **Firebase Integration** for secure data management.
-- **Optimized Caching & Performance** for large datasets.
+### 📈 Insights Hub  
+Dive deeper into your financial behavior with:  
+- **Spending Analysis:** Month-over-month expense comparisons by category.  
+- **AI Recommendations:** Actionable tips like *"Maintain current spending"* or *"Reduce coffee expenses."*  
+- **Budget Planning:** Simple tools for forecasting and goal setting.  
+- **Investment Tips:** AI-generated guidance to optimize your portfolio.  
+
 ---
 
-## 🏗️ System Overview
+## 🧩 Tech Stack  
 
-**Frontend**: React + TypeScript + Shadcn/UI  
-**Backend**: FastAPI (Python 3.8+)  
-**Database**: Firebase Firestore  
-**AI Layer**: OpenAI + CrewAI Agents  
+| Layer | Technology |
+|-------|-------------|
+| **Frontend** | **React + TypeScript + Shadcn/UI** |
+| **Backend** | **FastAPI (Python 3.8+)** |
+| **Database** | **Firebase Firestore** |
+| **AI Layer** | **OpenAI + CrewAI Agents** |
+| **Design** | **Fully responsive dark UI** for a premium user experience |
+
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start  
 
-
-### 1️⃣ Clone Repository
+### 1️⃣ Clone Repository  
 ```bash
 git clone <your-repo-url>
 cd financial-management-system
 ```
 
-### 2️⃣ Frontend Setup
+### 2️⃣ Frontend Setup  
 ```bash
 cd src
-npm install     # or pnpm install
+npm install
 cp .env.example .env.local
 ```
 
-Configure:
+**Configure environment variables** in `.env.local`:  
 ```bash
 VITE_API_BASE_URL=http://localhost:8000
 VITE_FIREBASE_CONFIG=your_firebase_config
 ```
 
-### 3️⃣ Backend Setup
+### 3️⃣ Backend Setup  
 ```bash
 cd src/backend
 python -m venv venv
-source venv/bin/activate      # Windows: venv\Scripts\activate
+source venv/bin/activate       # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Backend `.env` example:
+**Example `.env` file** for backend:
 ```bash
 OPENAI_API_KEY=your_openai_key
 CREWAI_API_KEY=your_crewai_key
@@ -83,40 +91,36 @@ FIREBASE_PROJECT_ID=your_project_id
 DEBUG=True
 ```
 
-### 4️⃣ Run Application
-
-**Start Backend:**
+### 4️⃣ Run Application  
+**Start Backend:**  
 ```bash
 cd src/backend
 uvicorn app:app --reload --port 8000
 ```
 
-**Start Frontend:**
+**Start Frontend:**  
 ```bash
 npm run dev
-# Opens http://localhost:5173
 ```
+**App runs at:** [http://localhost:5173](http://localhost:5173)
 
 ---
 
-## 🔌 API Overview
+## 🔌 API Overview  
 
 | Endpoint | Description |
-|-----------|--------------|
-| `POST /api/upload` | Upload financial data |
-| `GET /api/data/{year}/{month}` | Retrieve monthly insights |
-| `POST /api/chat` | Query AI financial assistant |
-| `GET /api/insights/{year}/{month}` | AI-generated insights |
+|-----------|-------------|
+| **POST /api/upload** | **Upload financial statements** |
+| **GET /api/data/{year}/{month}** | **Retrieve monthly analytics** |
+| **GET /api/insights/{year}/{month}** | **Fetch AI-generated insights** |
+| **POST /api/chat** | **Query the AI-based financial advisor** |
 
 ---
 
-## 🤝 Contributing
+## 🤝 Contributing  
 
-1. Fork this repository  
+1. **Fork** this repository  
 2. Create a new branch (`feature/your-feature`)  
-3. Commit and push changes  
-4. Submit a Pull Request  
-
----
-
+3. **Commit and push** your changes  
+4. Submit a **Pull Request**  
 
