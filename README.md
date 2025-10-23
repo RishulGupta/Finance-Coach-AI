@@ -8,12 +8,13 @@ Whether you want to analyze your monthly spending, compare habits over time, or 
 ---
 <p align="center">
   <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
-    <img src="https://github.com/RishulGupta/Finance-Coach-AI/blob/2fd9b9bd42434f63412ddff6d34ea23a0a28940e/Screenshot%202025-10-24%20005818.png" style="width:48%; height:300px; object-fit: cover;" />
-    <img src="https://github.com/RishulGupta/Finance-Coach-AI/blob/2fd9b9bd42434f63412ddff6d34ea23a0a28940e/Screenshot%202025-10-24%20005921.png" style="width:48%; height:300px; object-fit: cover;" />
-    <img src="https://github.com/RishulGupta/Finance-Coach-AI/blob/2fd9b9bd42434f63412ddff6d34ea23a0a28940e/Screenshot%202025-10-24%20010124.png" style="width:48%; height:300px; object-fit: cover;" />
-    <img src="https://github.com/RishulGupta/Finance-Coach-AI/blob/2fd9b9bd42434f63412ddff6d34ea23a0a28940e/Screenshot%202025-10-24%20010151.png" style="width:48%; height:300px; object-fit: cover;" />
+    <img src="https://github.com/RishulGupta/Finance-Coach-AI/blob/2fd9b9bd42434f63412ddff6d34ea23a0a28940e/Screenshot%202025-10-24%20005818.png" style="width:49%; height:500px; object-fit: cover;" />
+    <img src="https://github.com/RishulGupta/Finance-Coach-AI/blob/2fd9b9bd42434f63412ddff6d34ea23a0a28940e/Screenshot%202025-10-24%20005921.png" style="width:49%; height:500px; object-fit: cover;" />
+    <img src="https://github.com/RishulGupta/Finance-Coach-AI/blob/2fd9b9bd42434f63412ddff6d34ea23a0a28940e/Screenshot%202025-10-24%20010124.png" style="width:49%; height:500px; object-fit: cover;" />
+    <img src="https://github.com/RishulGupta/Finance-Coach-AI/blob/2fd9b9bd42434f63412ddff6d34ea23a0a28940e/Screenshot%202025-10-24%20010151.png" style="width:49%; height:500px; object-fit: cover;" />
   </div>
 </p>
+
 
 
 
