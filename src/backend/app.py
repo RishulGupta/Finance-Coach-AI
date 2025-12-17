@@ -325,6 +325,6 @@ if __name__ == "__main__":
     print("  - GET  /api/recommendations/ipo : Get IPO recommendations")
     print("  - POST /api/recommendations/stocks : Get stock recommendations")
     print("  - POST /api/recommendations/investment : Get investment advice")
-    print("[INFO] Starting server on http://0.0.0.0:8000")
+    print("[INFO] Starting server on http://0.0.0.0:8000") 
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
 #uvicorn app:app --host 0.0.0.0 --port 8000 --reload
