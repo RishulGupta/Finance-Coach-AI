@@ -1,6 +1,6 @@
-// FileUpload.tsx - IMPROVED VERSION with better timeout handling
+// FileUpload.tsx - MULTI-USER VERSION with optimized timeout handling
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
-import { Upload, FileText, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { Upload, FileText, AlertCircle, CheckCircle, Clock, Lock, RefreshCcw } from 'lucide-react';
 import type { UploadSuccessData } from '@/lib/types';
 
 interface FileUploadProps {
@@ -17,6 +18,7 @@ interface FileUploadProps {
 }
 
 export function FileUpload({ onUploadSuccess }: FileUploadProps) {
+  const { user, loading: authLoading } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
@@ -24,6 +26,12 @@ export function FileUpload({ onUploadSuccess }: FileUploadProps) {
   const [progress, setProgress] = useState(0);
   const [uploadPhase, setUploadPhase] = useState<'uploading' | 'processing' | 'saving' | 'complete'>('uploading');
   const { toast } = useToast();
+  
+  // Ref to prevent repeating toasts during the simulation interval
+  const toastShownRef = useRef<Record<string, boolean>>({
+    processing: false,
+    saving: false
+  });
 
   const getPhaseMessage = (phase: typeof uploadPhase) => {
     switch (phase) {
@@ -35,9 +43,17 @@ export function FileUpload({ onUploadSuccess }: FileUploadProps) {
   };
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to upload files",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
-      // Validate file type
       const validTypes = [
         'text/csv',
         'application/vnd.ms-excel',
@@ -53,13 +69,11 @@ export function FileUpload({ onUploadSuccess }: FileUploadProps) {
       if (isValidType || isValidExtension) {
         setFile(selectedFile);
         
-        // Show file size warning for large files
         const fileSizeMB = selectedFile.size / 1024 / 1024;
         if (fileSizeMB > 10) {
           toast({
             title: "Large File Detected",
-            description: `${selectedFile.name} (${fileSizeMB.toFixed(2)} MB) may take longer to process. Please be patient.`,
-            variant: "default"
+            description: `${selectedFile.name} (${fileSizeMB.toFixed(2)} MB) may take longer to process.`,
           });
         } else {
           toast({
@@ -73,75 +87,58 @@ export function FileUpload({ onUploadSuccess }: FileUploadProps) {
           description: "Please select a CSV or Excel file (.csv, .xlsx, .xls)",
           variant: "destructive"
         });
-        // Clear the input
         event.target.value = '';
       }
     }
-  }, [toast]);
+  }, [toast, user]);
 
   const handleUpload = async () => {
-    if (!file) {
-      toast({
-        title: "No File Selected",
-        description: "Please select a file to upload",
-        variant: "destructive"
-      });
-      return;
-    }
+    if (!user) return;
+    if (!file) return;
 
     setUploading(true);
     setProgress(0);
     setUploadPhase('uploading');
+    toastShownRef.current = { processing: false, saving: false };
 
-    // Estimate processing time based on file size
     const fileSizeMB = file.size / 1024 / 1024;
-    const estimatedTimeSeconds = Math.max(10, Math.ceil(fileSizeMB * 5)); // 5 seconds per MB, min 10 seconds
+    const estimatedTimeSeconds = Math.max(10, Math.ceil(fileSizeMB * 5));
     
     toast({
       title: "Upload Started",
-      description: `Processing ${file.name}... Estimated time: ${estimatedTimeSeconds} seconds`,
+      description: `Processing ${file.name}... Estimated time: ${estimatedTimeSeconds}s`,
     });
 
-    // Enhanced progress simulation with phases
-    let currentProgress = 0;
     const progressInterval = setInterval(() => {
       setProgress(prev => {
-        currentProgress = prev;
-        
-        // Phase transitions based on progress
         if (prev < 30) {
-          setUploadPhase('uploading');
           return prev + Math.random() * 8;
         } else if (prev < 80) {
-          if (uploadPhase !== 'processing') {
+          if (!toastShownRef.current.processing) {
             setUploadPhase('processing');
+            toastShownRef.current.processing = true;
             toast({
               title: "Processing Data",
               description: "Analyzing transactions and categorizing expenses...",
             });
           }
-          return prev + Math.random() * 3; // Slower progress during processing
+          return prev + Math.random() * 3;
         } else if (prev < 95) {
-          if (uploadPhase !== 'saving') {
+          if (!toastShownRef.current.saving) {
             setUploadPhase('saving');
+            toastShownRef.current.saving = true;
           }
           return prev + Math.random() * 2;
         } else {
-          // Don't go to 100% until we get the actual response
           return prev;
         }
       });
     }, 500);
 
     try {
-      console.log(`[Upload] Starting upload of ${file.name} (${fileSizeMB.toFixed(2)} MB)`);
       const startTime = Date.now();
-      
       const result = await apiClient.uploadFile(file, year, month);
-      
-      const endTime = Date.now();
-      const actualTimeSeconds = Math.ceil((endTime - startTime) / 1000);
-      console.log(`[Upload] Completed in ${actualTimeSeconds} seconds`);
+      const actualTimeSeconds = Math.ceil((Date.now() - startTime) / 1000);
 
       clearInterval(progressInterval);
       setProgress(100);
@@ -154,45 +151,50 @@ export function FileUpload({ onUploadSuccess }: FileUploadProps) {
       });
 
       onUploadSuccess(result as UploadSuccessData);
-
-      // Reset form
       setFile(null);
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
 
     } catch (error) {
       clearInterval(progressInterval);
-      setProgress(0);
-      setUploadPhase('uploading');
+      const errorMessage = error instanceof Error ? error.message : "";
 
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-      console.error('[Upload] Error:', errorMessage);
+      // Handle Timeout specifically as a "Success but Pending" state
+      if (errorMessage.toLowerCase().includes('timeout') || errorMessage.toLowerCase().includes('longer than expected')) {
+        setProgress(100);
+        setUploadPhase('complete');
+        
+        toast({
+          title: "Upload Sent Successfully",
+          description: "Upload has been done. Since the file is large, it will take a few more seconds to finish processing. Please refresh your page in a moment to see the changes.",
+          variant: "default", // Changed from destructive
+          duration: 10000,
+          action: <RefreshCcw className="h-4 w-4" />
+        });
 
-      // Provide different error messages based on the error type
-      let userMessage = errorMessage;
-      let suggestion = "";
+        // Clear file anyway as it's being handled by the server
+        setFile(null);
+        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
+      } else {
+        // Handle actual hard errors (wrong format, auth, etc.)
+        setProgress(0);
+        setUploadPhase('uploading');
+        
+        let userMessage = "An unknown error occurred";
+        if (errorMessage.includes('too large')) userMessage = "File too large to process";
+        else if (errorMessage.includes('format')) userMessage = "File format not supported";
+        else if (errorMessage.includes('authenticated')) userMessage = "Authentication error";
 
-      if (errorMessage.includes('timeout')) {
-        userMessage = "Upload is taking longer than expected";
-        suggestion = "Your file may still be processing in the background. Please wait a few minutes and check your dashboard, or try uploading a smaller file.";
-      } else if (errorMessage.includes('too large') || errorMessage.includes('size')) {
-        userMessage = "File too large to process";
-        suggestion = "Please try uploading a smaller file or contact support for help with large files.";
-      } else if (errorMessage.includes('format') || errorMessage.includes('invalid')) {
-        userMessage = "File format not supported";
-        suggestion = "Please ensure your file is a valid CSV or Excel file with transaction data.";
+        toast({
+          title: "Upload Failed",
+          description: userMessage,
+          variant: "destructive",
+          action: <AlertCircle className="h-4 w-4" />
+        });
       }
-
-      toast({
-        title: "Upload Failed",
-        description: `${userMessage}${suggestion ? `\n\n${suggestion}` : ''}`,
-        variant: "destructive",
-        action: <AlertCircle className="h-4 w-4" />
-      });
-
     } finally {
       setUploading(false);
-      // Reset progress after a delay
       setTimeout(() => {
         setProgress(0);
         setUploadPhase('uploading');
@@ -200,21 +202,49 @@ export function FileUpload({ onUploadSuccess }: FileUploadProps) {
     }
   };
 
+  if (!authLoading && !user) {
+    return (
+      <Card className="w-full max-w-md mx-auto shadow-lg border-border/50">
+        <CardHeader className="space-y-2">
+          <CardTitle className="flex items-center gap-3 text-xl">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Lock className="h-6 w-6 text-primary" />
+            </div>
+            Authentication Required
+          </CardTitle>
+          <CardDescription className="text-sm">
+            Please sign in with your Google account to upload financial data
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">Your financial data will be securely stored and private.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (authLoading) {
+    return (
+      <Card className="w-full max-w-md mx-auto shadow-lg border-border/50">
+        <CardContent className="text-center py-10">
+          <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Checking authentication...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
   const months = [
-    { value: 1, label: 'January' },
-    { value: 2, label: 'February' },
-    { value: 3, label: 'March' },
-    { value: 4, label: 'April' },
-    { value: 5, label: 'May' },
-    { value: 6, label: 'June' },
-    { value: 7, label: 'July' },
-    { value: 8, label: 'August' },
-    { value: 9, label: 'September' },
-    { value: 10, label: 'October' },
-    { value: 11, label: 'November' },
-    { value: 12, label: 'December' },
+    { value: 1, label: 'January' }, { value: 2, label: 'February' },
+    { value: 3, label: 'March' }, { value: 4, label: 'April' },
+    { value: 5, label: 'May' }, { value: 6, label: 'June' },
+    { value: 7, label: 'July' }, { value: 8, label: 'August' },
+    { value: 9, label: 'September' }, { value: 10, label: 'October' },
+    { value: 11, label: 'November' }, { value: 12, label: 'December' },
   ];
 
   return (
@@ -229,71 +259,48 @@ export function FileUpload({ onUploadSuccess }: FileUploadProps) {
         <CardDescription className="text-sm">
           Upload your CSV or Excel bank statement to analyze your financial data
         </CardDescription>
+        {user && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>Uploading as:</span>
+            <span className="font-medium text-primary">{user.email}</span>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* File Selection */}
         <div className="space-y-2">
           <Label htmlFor="file">Select File</Label>
           <Input
             id="file"
             type="file"
-            accept=".csv,.xlsx,.xls,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            accept=".csv,.xlsx,.xls"
             onChange={handleFileChange}
             disabled={uploading}
           />
           {file && (
             <div className="text-sm text-muted-foreground flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              <span>{file.name}</span>
-              <span>({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+              <span>{file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
             </div>
           )}
         </div>
 
-        {/* Period Selection */}
         <div className="flex gap-2">
           <div className="flex-1 space-y-2">
             <Label>Year</Label>
-            <Select
-              value={year.toString()}
-              onValueChange={(value) => setYear(parseInt(value))}
-              disabled={uploading}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {years.map((y) => (
-                  <SelectItem key={y} value={y.toString()}>
-                    {y}
-                  </SelectItem>
-                ))}
-              </SelectContent>
+            <Select value={year.toString()} onValueChange={(v) => setYear(parseInt(v))} disabled={uploading}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{years.map((y) => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          
           <div className="flex-1 space-y-2">
             <Label>Month</Label>
-            <Select
-              value={month.toString()}
-              onValueChange={(value) => setMonth(parseInt(value))}
-              disabled={uploading}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {months.map((m) => (
-                  <SelectItem key={m.value} value={m.value.toString()}>
-                    {m.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
+            <Select value={month.toString()} onValueChange={(v) => setMonth(parseInt(v))} disabled={uploading}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{months.map((m) => <SelectItem key={m.value} value={m.value.toString()}>{m.label}</SelectItem>)}</SelectContent>
             </Select>
           </div>
         </div>
 
-        {/* Progress */}
         {uploading && (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
@@ -307,7 +314,6 @@ export function FileUpload({ onUploadSuccess }: FileUploadProps) {
           </div>
         )}
 
-        {/* Upload Button */}
         <Button
           onClick={handleUpload}
           disabled={!file || uploading}
@@ -327,15 +333,9 @@ export function FileUpload({ onUploadSuccess }: FileUploadProps) {
           )}
         </Button>
 
-        {/* Help Text */}
         <div className="text-sm text-muted-foreground space-y-1">
-          <p><strong>Supported formats:</strong></p>
-          <ul className="list-disc list-inside space-y-1 text-xs">
-            <li>CSV files with transaction data</li>
-            <li>Excel files (.xlsx, .xls)</li>
-            <li>Files should contain columns for date, description, amount, etc.</li>
-            <li>Large files (&gt;10MB) may take several minutes to process</li>
-          </ul>
+          <p><strong>Supported formats:</strong> CSV, .xlsx, .xls</p>
+          <p className="text-xs">Large files (&gt;10MB) may take several minutes. If the connection times out, please refresh your dashboard after a minute.</p>
         </div>
       </CardContent>
     </Card>

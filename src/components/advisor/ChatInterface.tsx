@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Message {
   id: string;
@@ -26,6 +27,7 @@ interface AvailableMonth {
 }
 
 export function ChatInterface() {
+  const { user, loading } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -47,37 +49,49 @@ export function ChatInterface() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // Load available months on component mount
+  // Load available months only when user is authenticated
   useEffect(() => {
-    loadAvailableMonths();
-    checkConnection();
-  }, []);
-
-  // Clear chat when period changes - SAME AS STREAMLIT
-  useEffect(() => {
-    const newSessionId = `demo_user_${selectedYear}_${selectedMonth}`;
-    if (currentSessionId && newSessionId !== currentSessionId) {
-      // Period changed - clear current chat like Streamlit does
-      setMessages([{
-        id: '1',
-        type: 'bot',
-        content: "Hello! I'm your AI Financial Advisor powered by real data analysis. I can help you understand your spending patterns, provide investment advice, and answer questions about your financial data. What would you like to know?",
-        timestamp: new Date()
-      }]);
-      setHistoryLength(0);
-      
-      toast({
-        title: "Period Changed",
-        description: `Switched to ${getMonthName(parseInt(selectedMonth))} ${selectedYear}. Chat history cleared.`,
-        variant: "default"
-      });
+    if (!loading && user) {
+      loadAvailableMonths();
+      checkConnection();
+    } else if (!loading && !user) {
+      // Clear data when user logs out
+      setAvailableMonths([]);
+      setIsLoadingMonths(false);
+      setConnectionStatus('disconnected');
     }
-    setCurrentSessionId(newSessionId);
-  }, [selectedYear, selectedMonth, currentSessionId, toast]);
+  }, [user, loading]);
+
+  // Clear chat when period changes - SAME AS STREAMLIT but with user ID
+  useEffect(() => {
+    if (user) {
+      const newSessionId = `${user.uid}_${selectedYear}_${selectedMonth}`;
+      if (currentSessionId && newSessionId !== currentSessionId) {
+        // Period changed - clear current chat like Streamlit does
+        setMessages([{
+          id: '1',
+          type: 'bot',
+          content: "Hello! I'm your AI Financial Advisor powered by real data analysis. I can help you understand your spending patterns, provide investment advice, and answer questions about your financial data. What would you like to know?",
+          timestamp: new Date()
+        }]);
+        setHistoryLength(0);
+        
+        toast({
+          title: "Period Changed",
+          description: `Switched to ${getMonthName(parseInt(selectedMonth))} ${selectedYear}. Chat history cleared.`,
+          variant: "default"
+        });
+      }
+      setCurrentSessionId(newSessionId);
+    }
+  }, [selectedYear, selectedMonth, currentSessionId, toast, user]);
 
   const loadAvailableMonths = async () => {
+    if (!user) return;
+    
     setIsLoadingMonths(true);
     try {
+      console.log(`[ChatInterface] Loading months for user: ${user.uid}`);
       const monthsData = await apiClient.getAvailableMonths();
       const months: AvailableMonth[] = monthsData.months.map((m: any) => ({
         year: m.year,
@@ -94,9 +108,9 @@ export function ChatInterface() {
         setSelectedMonth(mostRecent.month.toString());
       }
       
-      console.log('[ChatInterface] Loaded available months:', months);
+      console.log(`[ChatInterface] Loaded ${months.length} available months for user ${user.uid}:`, months);
     } catch (error) {
-      console.error('[ChatInterface] Failed to load available months:', error);
+      console.error(`[ChatInterface] Failed to load available months for user ${user.uid}:`, error);
       toast({
         title: "Data Loading Error",
         description: "Could not load available data periods. Please upload some financial data first.",
@@ -116,6 +130,8 @@ export function ChatInterface() {
   };
 
   const checkConnection = async () => {
+    if (!user) return;
+    
     setConnectionStatus('checking');
     try {
       const isConnected = await apiClient.testConnection();
@@ -170,7 +186,7 @@ export function ChatInterface() {
   };
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || isTyping) return;
+    if (!inputValue.trim() || isTyping || !user) return;
 
     // Check connection before sending
     if (connectionStatus === 'disconnected') {
@@ -198,11 +214,11 @@ export function ChatInterface() {
       const year = parseInt(selectedYear);
       const month = parseInt(selectedMonth);
       
-      console.log(`[ChatInterface] Sending message: "${currentInput}" for ${month}/${year}`);
+      console.log(`[ChatInterface] Sending message for user ${user.uid}: "${currentInput}" for ${month}/${year}`);
       
       const response = await apiClient.sendChatMessage(currentInput, year, month);
       
-      console.log(`[ChatInterface] Received response:`, response);
+      console.log(`[ChatInterface] Received response for user ${user.uid}:`, response);
 
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -222,7 +238,7 @@ export function ChatInterface() {
       setConnectionStatus('connected');
 
     } catch (error) {
-      console.error('[ChatInterface] Error:', error);
+      console.error(`[ChatInterface] Error for user ${user.uid}:`, error);
       
       let errorContent = '';
       
@@ -233,6 +249,8 @@ export function ChatInterface() {
           errorContent = `I don't have financial data for ${getMonthName(parseInt(selectedMonth))} ${selectedYear}. Please make sure you have uploaded your bank statements for this period, or try selecting a different month from the dropdown above.`;
         } else if (error.message.includes('network') || error.message.includes('fetch')) {
           errorContent = `I'm having trouble connecting to the server. Please check if the backend is running on http://localhost:8000 and try again.`;
+        } else if (error.message.includes('authenticated')) {
+          errorContent = `Authentication error. Please make sure you're signed in and try again.`;
         } else {
           errorContent = `I'm sorry, I encountered an error: ${error.message}. Please make sure you have uploaded financial data for the selected period and the backend server is running.`;
         }
@@ -263,9 +281,13 @@ export function ChatInterface() {
   };
 
   const clearChat = async () => {
+    if (!user) return;
+    
     try {
       const year = parseInt(selectedYear);
       const month = parseInt(selectedMonth);
+      
+      console.log(`[ChatInterface] Clearing chat for user ${user.uid}: ${month}/${year}`);
       
       // Call API to clear server-side history
       await apiClient.clearChatHistory(year, month);
@@ -285,7 +307,7 @@ export function ChatInterface() {
         description: "Chat history has been cleared on both client and server."
       });
     } catch (error) {
-      console.error('Failed to clear chat history:', error);
+      console.error(`Failed to clear chat history for user ${user.uid}:`, error);
       toast({
         title: "Clear Failed",
         description: "Failed to clear server-side history, but UI has been cleared.",
@@ -295,7 +317,9 @@ export function ChatInterface() {
   };
 
   const handleQuickQuestion = (question: string) => {
-    setInputValue(question);
+    if (user) {
+      setInputValue(question);
+    }
   };
 
   useEffect(() => {
@@ -310,6 +334,59 @@ export function ChatInterface() {
     "Give me investment recommendations",
     "Show me my spending breakdown by category"
   ];
+
+  // Show authentication required message when not logged in
+  if (!loading && !user) {
+    return (
+      <div className="flex flex-col h-full max-w-7xl mx-auto p-6 space-y-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex-1 flex items-center justify-center"
+        >
+          <Card className="chat-container shadow-2xl border-l-4 border-l-primary max-w-md">
+            <CardContent className="text-center py-10 px-6">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200 }}
+                className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-primary/30 to-primary/20 flex items-center justify-center"
+              >
+                <Bot className="h-10 w-10 text-primary" />
+              </motion.div>
+              <h3 className="text-xl font-bold text-foreground mb-2">Authentication Required</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                Please sign in with your Google account to access the AI Financial Advisor and your personal financial data.
+              </p>
+              <Badge className="px-4 py-2 bg-primary/10 text-primary border-primary/30">
+                Secure & Private
+              </Badge>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex flex-col h-full max-w-7xl mx-auto p-6 space-y-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex-1 flex items-center justify-center"
+        >
+          <Card className="chat-container shadow-2xl border-l-4 border-l-primary max-w-md">
+            <CardContent className="text-center py-10 px-6">
+              <Loader2 className="h-10 w-10 mx-auto mb-4 animate-spin text-primary" />
+              <p className="text-base font-medium text-foreground">Loading your AI advisor...</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full max-w-7xl mx-auto p-6 space-y-8">
@@ -373,6 +450,11 @@ export function ChatInterface() {
                 </span>
               </div>
               <div className="flex items-center space-x-3">
+                {user && (
+                  <Badge className="px-4 py-2 bg-primary/10 text-primary border-primary/30">
+                    {user.email?.split('@')[0]}
+                  </Badge>
+                )}
                 {historyLength > 0 && (
                   <Badge className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-accent/20 to-primary/20 border-accent/30">
                     <History className="h-4 w-4" />
@@ -512,6 +594,7 @@ export function ChatInterface() {
                 size="sm" 
                 onClick={clearChat} 
                 className="premium-button rounded-2xl gap-2 border-destructive/30 hover:bg-destructive/10"
+                disabled={!user}
               >
                 <Trash2 className="h-4 w-4" />
                 Clear Chat
@@ -602,7 +685,7 @@ export function ChatInterface() {
 
             {/* Enhanced Quick Questions */}
             <AnimatePresence>
-              {messages.length === 1 && (
+              {messages.length === 1 && user && (
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -644,7 +727,7 @@ export function ChatInterface() {
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                   placeholder="Ask me anything about your finances..."
-                  disabled={isTyping || connectionStatus === 'disconnected'}
+                  disabled={isTyping || connectionStatus === 'disconnected' || !user}
                   className="chat-input flex-1 h-14 text-base px-6"
                 />
                 <motion.div
@@ -653,7 +736,7 @@ export function ChatInterface() {
                 >
                   <Button
                     onClick={handleSendMessage}
-                    disabled={!inputValue.trim() || isTyping || connectionStatus === 'disconnected'}
+                    disabled={!inputValue.trim() || isTyping || connectionStatus === 'disconnected' || !user}
                     size="icon"
                     className="h-14 w-14 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 premium-button"
                   >

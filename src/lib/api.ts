@@ -1,4 +1,4 @@
-// api.ts - ENHANCED VERSION with Firebase User Authentication Support
+// api.ts - MULTI-USER VERSION with Firebase User Authentication Support
 
 import type { ApiResponse, FinancialData, MonthData } from './types';
 import type { UploadSuccessData, FinancialInsights } from './types';
@@ -11,13 +11,14 @@ declare global {
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 // FIXED: Increase timeout to 2 minutes for file processing
-const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '240000'); // 2 minutes
+const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '500000'); // 2 minutes
 
 // Investment API response types
 interface InvestmentResponse {
   recommendations?: string;
   advice?: string;
   message?: string;
+  user_id?: string;
 }
 
 class ApiClient {
@@ -43,19 +44,20 @@ class ApiClient {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
-    // Add user ID to headers if available
+    // Get user ID and ensure user is authenticated
     const userId = this.getCurrentUserId();
+    if (!userId) {
+      throw new Error('User must be authenticated to access this resource');
+    }
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'X-User-ID': userId,
       ...options.headers as Record<string, string>,
     };
 
-    if (userId) {
-      headers['X-User-ID'] = userId;
-    }
-
     try {
-      console.log(`[API] Making request to: ${url}`, userId ? `(User: ${userId})` : '(No user)');
+      console.log(`[API] Making request to: ${url} (User: ${userId})`);
       const response = await fetch(url, {
         ...options,
         signal: controller.signal,
@@ -119,10 +121,9 @@ class ApiClient {
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('userId', userId);
     
     // Use query parameters for year and month
-    const url = `${this.baseURL}/api/upload?year=${year}&month=${month}&userId=${userId}`;
+    const url = `${this.baseURL}/api/upload?year=${year}&month=${month}`;
     const controller = new AbortController();
     
     // FIXED: Use even longer timeout for file uploads (3 minutes)
@@ -178,20 +179,12 @@ class ApiClient {
 
   // Get financial data for a specific month and user
   async getFinancialData(year: number, month: number): Promise<FinancialData> {
-    const userId = this.getCurrentUserId();
-    if (!userId) {
-      throw new Error('User must be authenticated to access financial data');
-    }
-    return this.request(`/api/data/${year}/${month}?userId=${userId}`);
+    return this.request(`/api/data/${year}/${month}`);
   }
 
   // Get available months for current user
   async getAvailableMonths(): Promise<{ months: MonthData[] }> {
-    const userId = this.getCurrentUserId();
-    if (!userId) {
-      throw new Error('User must be authenticated to access data');
-    }
-    return this.request(`/api/months?userId=${userId}`);
+    return this.request(`/api/months`);
   }
 
   // ENHANCED: Send chat message with user context
@@ -199,15 +192,10 @@ class ApiClient {
     question: string,
     year: number = 2024,
     month: number = 1
-  ): Promise<{ response: string; session_id?: string; history_length?: number }> {
-    const userId = this.getCurrentUserId();
-    if (!userId) {
-      throw new Error('User must be authenticated to use chat');
-    }
-
+  ): Promise<{ response: string; session_id?: string; history_length?: number; user_id?: string }> {
     const result = await this.request('/api/chat', {
       method: 'POST',
-      body: JSON.stringify({ question, year, month, userId }),
+      body: JSON.stringify({ question, year, month }),
     });
 
     // Clean up any asterisks
@@ -221,7 +209,7 @@ class ApiClient {
   }
       
   // Clear chat history for specific period and user
-  async clearChatHistory(year: number, month: number): Promise<{ success: boolean, message: string, session_id: string }> {
+  async clearChatHistory(year: number, month: number): Promise<{ success: boolean, message: string, session_id: string, user_id?: string }> {
     const userId = this.getCurrentUserId();
     if (!userId) {
       throw new Error('User must be authenticated to clear chat history');
@@ -232,7 +220,7 @@ class ApiClient {
     try {
       const result = await this.request('/api/chat/clear', {
         method: 'POST',
-        body: JSON.stringify({ year, month, userId }),
+        body: JSON.stringify({ year, month }),
       });
       
       console.log('[API] Chat history cleared:', result);
@@ -244,7 +232,7 @@ class ApiClient {
   }
 
   // Get chat history for specific period and user
-  async getChatHistory(year: number, month: number): Promise<{ session_id: string, history: any[], message_count: number }> {
+  async getChatHistory(year: number, month: number): Promise<{ session_id: string, history: any[], message_count: number, user_id?: string }> {
     const userId = this.getCurrentUserId();
     if (!userId) {
       throw new Error('User must be authenticated to access chat history');
@@ -253,7 +241,7 @@ class ApiClient {
     console.log(`[API] Getting chat history for user ${userId}: ${month}/${year}`);
     
     try {
-      const result = await this.request(`/api/chat/history/${year}/${month}?userId=${userId}`);
+      const result = await this.request(`/api/chat/history/${year}/${month}`);
       console.log('[API] Chat history retrieved:', result);
       return result;
     } catch (error) {
@@ -263,7 +251,7 @@ class ApiClient {
   }
 
   // Get all chat sessions for current user
-  async getChatSessions(): Promise<{ sessions: any, total_sessions: number }> {
+  async getChatSessions(): Promise<{ sessions: any, total_sessions: number, user_id?: string }> {
     const userId = this.getCurrentUserId();
     if (!userId) {
       throw new Error('User must be authenticated to access chat sessions');
@@ -272,7 +260,7 @@ class ApiClient {
     console.log(`[API] Getting all chat sessions for user ${userId}...`);
     
     try {
-      const result = await this.request(`/api/chat/sessions?userId=${userId}`);
+      const result = await this.request(`/api/chat/sessions`);
       console.log('[API] Chat sessions retrieved:', result);
       return result;
     } catch (error) {
@@ -290,7 +278,7 @@ class ApiClient {
 
     console.log(`[API] Fetching IPO recommendations for user ${userId}...`);
     try {
-      const result = await this.request(`/api/recommendations/ipo?userId=${userId}`);
+      const result = await this.request(`/api/recommendations/ipo`);
       console.log('[API] IPO recommendations received:', typeof result);
       return result;
     } catch (error) {
@@ -310,7 +298,7 @@ class ApiClient {
     try {
       const result = await this.request('/api/recommendations/stocks', {
         method: 'POST',
-        body: JSON.stringify({ year, month, userId }),
+        body: JSON.stringify({ year, month }),
       });
       console.log('[API] Stock recommendations received:', typeof result);
       return result;
@@ -331,7 +319,7 @@ class ApiClient {
     try {
       const result = await this.request('/api/recommendations/investment', {
         method: 'POST',
-        body: JSON.stringify({ year, month, userId }),
+        body: JSON.stringify({ year, month }),
       });
       console.log('[API] Investment advice received:', typeof result);
       return result;
@@ -354,7 +342,7 @@ class ApiClient {
     }
 
     console.log(`[API] Fetching insights for user ${userId}: ${month}/${year}...`);
-    const response = await fetch(`${API_BASE_URL}/api/insights/${year}/${month}?userId=${userId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/insights/${year}/${month}`, {
       headers: {
         'X-User-ID': userId,
       },
@@ -380,6 +368,7 @@ class ApiClient {
   // Set current user ID (called by auth context)
   setCurrentUserId(userId: string | null) {
     (window as any).currentUserId = userId;
+    console.log(`[API] Current user ID set to: ${userId}`);
   }
 }
 

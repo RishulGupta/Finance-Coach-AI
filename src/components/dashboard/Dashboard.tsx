@@ -10,7 +10,8 @@ import { SpendingChart } from '../charts/SpendingChart';
 import { CategoryBreakdown } from '../charts/CategoryBreakdown';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, TrendingUp, TrendingDown, DollarSign, CreditCard } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Calendar, TrendingUp, TrendingDown, DollarSign, CreditCard, Lock } from 'lucide-react';
 import type { FinancialData, MonthData } from '@/lib/types';
 
 interface DashboardProps {
@@ -21,29 +22,41 @@ interface DashboardProps {
 }
 
 export function Dashboard({ selectedYear, selectedMonth, availableMonths, onPeriodChange }: DashboardProps) {
+  const { user, loading: authLoading } = useAuth();
   const [financialData, setFinancialData] = useState<FinancialData | null>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    loadFinancialData();
-  }, [selectedYear, selectedMonth]);
+    // Only load data when user is authenticated
+    if (!authLoading && user) {
+      loadFinancialData();
+    } else if (!authLoading && !user) {
+      // Clear data when user logs out
+      setFinancialData(null);
+    }
+  }, [selectedYear, selectedMonth, user, authLoading]);
 
   const loadFinancialData = async () => {
+    if (!user) return;
+    
     setLoading(true);
     try {
+      console.log(`[Dashboard] Loading financial data for user ${user.uid}: ${selectedMonth}/${selectedYear}`);
       const response = await apiClient.getFinancialData(selectedYear, selectedMonth);
       if (response.exists) {
         setFinancialData(response);
+        console.log(`[Dashboard] Loaded data for user ${user.uid}:`, response.metrics);
       } else {
         setFinancialData(null);
         toast({
           title: "No Data Found",
           description: `No financial data available for ${selectedMonth}/${selectedYear}`,
-          variant: "destructive"
+          variant: "default"
         });
       }
     } catch (error) {
+      console.error(`[Dashboard] Failed to load data for user ${user.uid}:`, error);
       toast({
         title: "Failed to Load Data",
         description: error instanceof Error ? error.message : 'Unknown error occurred',
@@ -58,6 +71,59 @@ export function Dashboard({ selectedYear, selectedMonth, availableMonths, onPeri
     const [year, month] = value.split('-').map(Number);
     onPeriodChange({ year, month });
   };
+
+  // Show authentication required message when not logged in
+  if (!authLoading && !user) {
+    return (
+      <div className="space-y-6">
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5" />
+              Authentication Required
+            </CardTitle>
+            <CardDescription>
+              Please sign in with your Google account to access your financial dashboard and personal data.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                <Lock className="h-8 w-8 text-primary" />
+              </div>
+              <p className="text-muted-foreground">Your financial data is secure and private to your account.</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show loading state during authentication
+  if (authLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map(i => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-4 w-[100px]" />
+                <Skeleton className="h-4 w-4" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-[120px]" />
+                <Skeleton className="h-3 w-[80px] mt-2" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Skeleton className="h-[400px]" />
+          <Skeleton className="h-[400px]" />
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -155,6 +221,11 @@ export function Dashboard({ selectedYear, selectedMonth, availableMonths, onPeri
               </SelectContent>
             </Select>
             <div className="flex items-center gap-4">
+              {user && (
+                <Badge variant="secondary">
+                  {user.email?.split('@')[0]}
+                </Badge>
+              )}
               <Badge variant="outline">
                 {metrics?.transactionCount || 0} transactions
               </Badge>
