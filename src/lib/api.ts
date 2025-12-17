@@ -1,8 +1,13 @@
-// api.ts - ENHANCED VERSION with Chat History Support added to existing functionality
+// api.ts - ENHANCED VERSION with Firebase User Authentication Support
 
 import type { ApiResponse, FinancialData, MonthData } from './types';
 import type { UploadSuccessData, FinancialInsights } from './types';
 
+declare global {
+  interface Window {
+    currentUserId: string | null;
+  }
+}
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 // FIXED: Increase timeout to 2 minutes for file processing
@@ -24,6 +29,12 @@ class ApiClient {
     this.timeout = timeout;
   }
 
+  // Get current user ID from Firebase auth
+  private getCurrentUserId(): string | null {
+    // This will be set by the auth context
+    return window.currentUserId || null;
+  }
+
   private async request(
     endpoint: string,
     options: RequestInit = {}
@@ -32,15 +43,23 @@ class ApiClient {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
+    // Add user ID to headers if available
+    const userId = this.getCurrentUserId();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...options.headers as Record<string, string>,
+    };
+
+    if (userId) {
+      headers['X-User-ID'] = userId;
+    }
+
     try {
-      console.log(`[API] Making request to: ${url}`);
+      console.log(`[API] Making request to: ${url}`, userId ? `(User: ${userId})` : '(No user)');
       const response = await fetch(url, {
         ...options,
         signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
+        headers,
       });
 
       clearTimeout(timeoutId);
@@ -91,13 +110,19 @@ class ApiClient {
     }
   }
 
-  // Upload file to backend with extended timeout for large files
+  // Upload file to backend with user ID
   async uploadFile(file: File, year: number, month: number): Promise<ApiResponse> {
+    const userId = this.getCurrentUserId();
+    if (!userId) {
+      throw new Error('User must be authenticated to upload files');
+    }
+
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('userId', userId);
     
     // Use query parameters for year and month
-    const url = `${this.baseURL}/api/upload?year=${year}&month=${month}`;
+    const url = `${this.baseURL}/api/upload?year=${year}&month=${month}&userId=${userId}`;
     const controller = new AbortController();
     
     // FIXED: Use even longer timeout for file uploads (3 minutes)
@@ -105,14 +130,16 @@ class ApiClient {
     const timeoutId = setTimeout(() => controller.abort(), uploadTimeout);
 
     try {
-      console.log(`[API] Starting file upload: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+      console.log(`[API] Starting file upload for user ${userId}: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
       console.log(`[API] Upload timeout set to: ${uploadTimeout / 1000} seconds`);
       
       const response = await fetch(url, {
         method: 'POST',
         body: formData,
         signal: controller.signal,
-        // Don't set Content-Type header - let browser set it for FormData
+        headers: {
+          'X-User-ID': userId,
+        },
       });
 
       clearTimeout(timeoutId);
@@ -149,25 +176,38 @@ class ApiClient {
     }
   }
 
-  // Get financial data for a specific month
+  // Get financial data for a specific month and user
   async getFinancialData(year: number, month: number): Promise<FinancialData> {
-    return this.request(`/api/data/${year}/${month}`);
+    const userId = this.getCurrentUserId();
+    if (!userId) {
+      throw new Error('User must be authenticated to access financial data');
+    }
+    return this.request(`/api/data/${year}/${month}?userId=${userId}`);
   }
 
-  // Get available months
+  // Get available months for current user
   async getAvailableMonths(): Promise<{ months: MonthData[] }> {
-  return this.request('/api/months');
-}
+    const userId = this.getCurrentUserId();
+    if (!userId) {
+      throw new Error('User must be authenticated to access data');
+    }
+    return this.request(`/api/months?userId=${userId}`);
+  }
 
-  // ENHANCED: Send chat message with history support
+  // ENHANCED: Send chat message with user context
   async sendChatMessage(
     question: string,
     year: number = 2024,
     month: number = 1
   ): Promise<{ response: string; session_id?: string; history_length?: number }> {
+    const userId = this.getCurrentUserId();
+    if (!userId) {
+      throw new Error('User must be authenticated to use chat');
+    }
+
     const result = await this.request('/api/chat', {
       method: 'POST',
-      body: JSON.stringify({ question, year, month }),
+      body: JSON.stringify({ question, year, month, userId }),
     });
 
     // Clean up any asterisks
@@ -180,14 +220,19 @@ class ApiClient {
     return result;
   }
       
-  // NEW: Clear chat history for specific period
+  // Clear chat history for specific period and user
   async clearChatHistory(year: number, month: number): Promise<{ success: boolean, message: string, session_id: string }> {
-    console.log(`[API] Clearing chat history for ${month}/${year}`);
+    const userId = this.getCurrentUserId();
+    if (!userId) {
+      throw new Error('User must be authenticated to clear chat history');
+    }
+
+    console.log(`[API] Clearing chat history for user ${userId}: ${month}/${year}`);
     
     try {
       const result = await this.request('/api/chat/clear', {
         method: 'POST',
-        body: JSON.stringify({ year, month }),
+        body: JSON.stringify({ year, month, userId }),
       });
       
       console.log('[API] Chat history cleared:', result);
@@ -198,12 +243,17 @@ class ApiClient {
     }
   }
 
-  // NEW: Get chat history for specific period
+  // Get chat history for specific period and user
   async getChatHistory(year: number, month: number): Promise<{ session_id: string, history: any[], message_count: number }> {
-    console.log(`[API] Getting chat history for ${month}/${year}`);
+    const userId = this.getCurrentUserId();
+    if (!userId) {
+      throw new Error('User must be authenticated to access chat history');
+    }
+
+    console.log(`[API] Getting chat history for user ${userId}: ${month}/${year}`);
     
     try {
-      const result = await this.request(`/api/chat/history/${year}/${month}`);
+      const result = await this.request(`/api/chat/history/${year}/${month}?userId=${userId}`);
       console.log('[API] Chat history retrieved:', result);
       return result;
     } catch (error) {
@@ -212,12 +262,17 @@ class ApiClient {
     }
   }
 
-  // NEW: Get all chat sessions
+  // Get all chat sessions for current user
   async getChatSessions(): Promise<{ sessions: any, total_sessions: number }> {
-    console.log('[API] Getting all chat sessions...');
+    const userId = this.getCurrentUserId();
+    if (!userId) {
+      throw new Error('User must be authenticated to access chat sessions');
+    }
+
+    console.log(`[API] Getting all chat sessions for user ${userId}...`);
     
     try {
-      const result = await this.request('/api/chat/sessions');
+      const result = await this.request(`/api/chat/sessions?userId=${userId}`);
       console.log('[API] Chat sessions retrieved:', result);
       return result;
     } catch (error) {
@@ -226,11 +281,16 @@ class ApiClient {
     }
   }
 
-  // Get IPO recommendations - FIXED: Better typing
+  // Get IPO recommendations for current user
   async getIPORecommendations(): Promise<string | InvestmentResponse> {
-    console.log('[API] Fetching IPO recommendations...');
+    const userId = this.getCurrentUserId();
+    if (!userId) {
+      throw new Error('User must be authenticated to get recommendations');
+    }
+
+    console.log(`[API] Fetching IPO recommendations for user ${userId}...`);
     try {
-      const result = await this.request('/api/recommendations/ipo');
+      const result = await this.request(`/api/recommendations/ipo?userId=${userId}`);
       console.log('[API] IPO recommendations received:', typeof result);
       return result;
     } catch (error) {
@@ -239,13 +299,18 @@ class ApiClient {
     }
   }
 
-  // Get stock recommendations - FIXED: Better typing
+  // Get stock recommendations for current user
   async getStockRecommendations(year: number = 2024, month: number = 1): Promise<string | InvestmentResponse> {
-    console.log(`[API] Fetching stock recommendations for ${month}/${year}...`);
+    const userId = this.getCurrentUserId();
+    if (!userId) {
+      throw new Error('User must be authenticated to get recommendations');
+    }
+
+    console.log(`[API] Fetching stock recommendations for user ${userId}: ${month}/${year}...`);
     try {
       const result = await this.request('/api/recommendations/stocks', {
         method: 'POST',
-        body: JSON.stringify({ year, month }),
+        body: JSON.stringify({ year, month, userId }),
       });
       console.log('[API] Stock recommendations received:', typeof result);
       return result;
@@ -255,13 +320,18 @@ class ApiClient {
     }
   }
 
-  // Get investment advice - FIXED: Better typing
+  // Get investment advice for current user
   async getInvestmentAdvice(year: number = 2024, month: number = 1): Promise<string | InvestmentResponse> {
-    console.log(`[API] Fetching investment advice for ${month}/${year}...`);
+    const userId = this.getCurrentUserId();
+    if (!userId) {
+      throw new Error('User must be authenticated to get investment advice');
+    }
+
+    console.log(`[API] Fetching investment advice for user ${userId}: ${month}/${year}...`);
     try {
       const result = await this.request('/api/recommendations/investment', {
         method: 'POST',
-        body: JSON.stringify({ year, month }),
+        body: JSON.stringify({ year, month, userId }),
       });
       console.log('[API] Investment advice received:', typeof result);
       return result;
@@ -276,9 +346,19 @@ class ApiClient {
     return this.request('/');
   }
   
+  // Get insights for current user
   async getInsights(year: number, month: number): Promise<FinancialInsights> {
-    console.log(`[API] Fetching insights for ${month}/${year}...`);
-    const response = await fetch(`${API_BASE_URL}/api/insights/${year}/${month}`);
+    const userId = this.getCurrentUserId();
+    if (!userId) {
+      throw new Error('User must be authenticated to get insights');
+    }
+
+    console.log(`[API] Fetching insights for user ${userId}: ${month}/${year}...`);
+    const response = await fetch(`${API_BASE_URL}/api/insights/${year}/${month}?userId=${userId}`, {
+      headers: {
+        'X-User-ID': userId,
+      },
+    });
     if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Failed to fetch insights');
@@ -295,6 +375,11 @@ class ApiClient {
       console.error('API connection test failed:', error);
       return false;
     }
+  }
+
+  // Set current user ID (called by auth context)
+  setCurrentUserId(userId: string | null) {
+    (window as any).currentUserId = userId;
   }
 }
 

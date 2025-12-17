@@ -22,7 +22,6 @@ if not GROQ_API_KEY:
 
 model = ChatGroq(model="llama-3.3-70b-versatile", groq_api_key=GROQ_API_KEY)
 
-USER_ID = "demo_user"  # Replace with auth logic
 
 def load_data_from_firebase(user_id, year, month):
     """

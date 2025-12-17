@@ -14,6 +14,22 @@ export interface UploadSuccessData extends ApiResponse {
   year: number;
   month: number;
 }
+
+// User Types for Firebase Authentication
+export interface User {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+}
+
+export interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  signIn: () => Promise<void>;
+  signOut: () => Promise<void>;
+}
+
 export interface SpendingInsight {
   id: string;
   category: string;
@@ -51,6 +67,7 @@ export interface FinancialInsights {
   budgetRecommendations: BudgetRecommendation[];
   investmentTips: InvestmentTip[];
 }
+
 // Financial Data Types
 export interface Transaction {
   id?: string;
@@ -61,6 +78,7 @@ export interface Transaction {
   credit_inr: number;
   balance_inr?: number;
   month?: string;
+  userId?: string; // Added for user-specific data
 }
 
 export interface CategorySummary {
@@ -69,6 +87,7 @@ export interface CategorySummary {
   total_spent: number;
   total_income: number;
   transactions: number;
+  userId?: string; // Added for user-specific data
 }
 
 export interface FinancialMetrics {
@@ -107,6 +126,7 @@ export interface ChatRequest {
   question: string;
   year?: number;
   month?: number;
+  userId?: string; // Added for user-specific data
 }
 
 export interface ChatResponse {
@@ -116,6 +136,7 @@ export interface ChatResponse {
 export interface RecommendationRequest {
   year?: number;
   month?: number;
+  userId?: string; // Added for user-specific data
 }
 
 export interface IPORecommendation {

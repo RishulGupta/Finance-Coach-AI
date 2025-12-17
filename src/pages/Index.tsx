@@ -3,10 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { FileUpload } from '@/components/FileUpload';
 import { ChatInterface } from '@/components/advisor/ChatInterface';
 import { Dashboard } from '@/components/dashboard/Dashboard';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
 import { InsightsContainer } from '@/components/insights/InsightsContainer';
 
@@ -23,10 +27,14 @@ import {
   Target,
   Brain,
   Sparkles,
-  Zap
+  Zap,
+  LogOut,
+  User,
+  ChevronDown
 } from 'lucide-react';
 
 export default function Index() {
+  const { user, signOut } = useAuth();
   const [isBackendConnected, setIsBackendConnected] = useState(false);
   const [availableMonths, setAvailableMonths] = useState<MonthData[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState({ year: 2024, month: 1 });
@@ -78,6 +86,22 @@ export default function Index() {
     setSelectedPeriod({ year: data.year, month: data.month });
   };
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Signed Out",
+        description: "You have been successfully signed out.",
+      });
+    } catch (error) {
+      toast({
+        title: "Sign Out Failed",
+        description: "An error occurred while signing out.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const tabVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { 
@@ -101,11 +125,6 @@ export default function Index() {
     backgroundAttachment: "fixed",
   }}
 >
-
-
-
-
-
 
       {/* Enhanced Premium Header */}
       <motion.header
@@ -168,7 +187,7 @@ export default function Index() {
         </div>
       </motion.div>
 
-      {/* Status Indicators */}
+      {/* Status Indicators & User Profile */}
       <div className="flex items-center gap-4">
         
         {/* Connection Badge */}
@@ -214,11 +233,53 @@ export default function Index() {
             </Badge>
           </motion.div>
         )}
+
+        {/* User Profile Dropdown */}
+        {user && (
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.4 }}
+          >
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/10 transition-colors">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
+                    <AvatarFallback className="bg-emerald-500/20 text-emerald-300">
+                      {user.displayName?.charAt(0) || user.email?.charAt(0) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="hidden sm:block text-left">
+                    <p className="text-sm font-medium text-white">{user.displayName || 'User'}</p>
+                    <p className="text-xs text-neutral-400">{user.email}</p>
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-neutral-400" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-[rgba(20,20,20,0.95)] border-white/10 backdrop-blur-xl">
+                <DropdownMenuLabel className="text-emerald-300">My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-white/10" />
+                <DropdownMenuItem className="text-white hover:bg-white/10 cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-white/10" />
+                <DropdownMenuItem 
+                  className="text-red-300 hover:bg-red-500/10 cursor-pointer"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </motion.div>
+        )}
       </div>
     </div>
   </div>
 </motion.header>
-
 
       {/* Main Content */}
       <main className="container mx-auto px-6 py-10">
@@ -232,8 +293,7 @@ export default function Index() {
               transition={{ duration: 0.5 }}
               className="max-w-3xl mx-auto"
             >
-              <Card className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-all duration-300 hover:border-white/20"
->
+              <Card className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-all duration-300 hover:border-white/20">
                 <CardHeader className="text-center pb-6">
                   <motion.div
                     initial={{ scale: 0 }}
@@ -257,7 +317,7 @@ export default function Index() {
                     <div className="text-secondary">uvicorn app:app --reload --port 8000</div>
                   </div>
                   <p className="text-sm text-muted-foreground mt-6 text-center">
-                    Make sure to configure your Firebase credentials in the .env file.
+                    Make sure to configure your Firebase credentials in the .env file and update the backend to handle user-specific data.
                   </p>
                 </CardContent>
               </Card>
@@ -343,14 +403,13 @@ rounded-xl transition-all duration-300 hover:text-white"
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.3, duration: 0.5 }}
                         >
-                          <Card className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-all duration-300 hover:border-white/20"
->
+                          <Card className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-all duration-300 hover:border-white/20">
                             <CardHeader>
                               <CardTitle className="text-xl font-bold flex items-center gap-3">
                                 <div className="p-2 rounded-xl bg-primary/10">
                                   <Target className="h-5 w-5 text-primary" />
                                 </div>
-                                Available Data Periods
+                                Your Available Data Periods
                               </CardTitle>
                               <CardDescription className="text-base">
                                 You have financial data for the following periods
@@ -433,8 +492,7 @@ rounded-xl transition-all duration-300 hover:text-white"
                           month={selectedPeriod.month} 
                         />
                       ) : (
-                        <Card className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-all duration-300 hover:border-white/20"
->
+                        <Card className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-all duration-300 hover:border-white/20">
                           <CardHeader className="text-center">
                             <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-accent/20 to-accent/10 rounded-3xl flex items-center justify-center">
                               <Brain className="h-8 w-8 text-accent" />
