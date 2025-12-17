@@ -1,73 +1,135 @@
-# Welcome to your Lovable project
+# 💰 Finance Coach AI  
+Finance Coach AI is an **intelligent, all-in-one financial management platform** that transforms your bank statements into actionable insights.  
 
-## Project info
+It helps you **track expenses, understand spending patterns, chat with an AI financial advisor**, and make **smarter investment and budgeting decisions** — all from one intuitive dashboard.  
 
-**URL**: https://lovable.dev/projects/7812e515-8eee-4793-82cc-7d31d2a3fdc6
+Whether you want to analyze your monthly spending, compare habits over time, or receive investment recommendations, **Finance Coach AI** does it all with **clarity, precision, and ease**.  
 
-## How can I edit this code?
+---
+<p align="center">
+  <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+    <img src="https://github.com/RishulGupta/Finance-Coach-AI/blob/2fd9b9bd42434f63412ddff6d34ea23a0a28940e/Screenshot%202025-10-24%20005818.png" style="width: auto; height: auto; max-width: 100%;" />
+    <img src="https://github.com/RishulGupta/Finance-Coach-AI/blob/2fd9b9bd42434f63412ddff6d34ea23a0a28940e/Screenshot%202025-10-24%20005921.png" style="width: auto; height: auto; max-width: 100%;" />
+    <img src="https://github.com/RishulGupta/Finance-Coach-AI/blob/2fd9b9bd42434f63412ddff6d34ea23a0a28940e/Screenshot%202025-10-24%20010124.png" style="width: auto; height: auto; max-width: 100%;" />
+    <img src="https://github.com/RishulGupta/Finance-Coach-AI/blob/2fd9b9bd42434f63412ddff6d34ea23a0a28940e/Screenshot%202025-10-24%20010151.png" style="width: auto; height: auto; max-width: 100%;" />
+  </div>
+</p>
 
-There are several ways of editing your application.
 
-**Use Lovable**
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/7812e515-8eee-4793-82cc-7d31d2a3fdc6) and start prompting.
+## 🌟 Key Features  
 
-Changes made via Lovable will be committed automatically to this repo.
+### 📤 Upload Center  
+- **Effortlessly upload** bank statements in **CSV or Excel** formats.  
+- **Automatically parses and classifies** transactions using **AI-driven categorization**.  
+- **Securely stores** and syncs data across sessions with **Firebase Firestore**.  
 
-**Use your preferred IDE**
+### 📊 Financial Dashboard  
+A **visually rich and data-driven dashboard** to understand your financial journey:  
+- **Total Income & Spending:** Instant monthly summaries.  
+- **Spending Analysis:** Bar and pie charts showing spending distribution.  
+- **Category Breakdown:** AI-organized categories (Food, Transport, Subscriptions, etc.).  
+- **Multi-Period Comparison:** View spending, income, and transaction trends over time.  
+- **Smart KPIs:** Track highest spend, average spend, and category diversity.  
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 🧠 AI Financial Advisor  
+A **conversational assistant** that helps you make sense of your money:  
+- **Ask in Natural Language:**  
+  - *"What did I spend the most on this month?"*  
+  - *"Give me investment recommendations."*  
+  - *"How does my spending compare to last month?"*  
+- **Real-Time Analysis:** Uses your **actual uploaded data** for contextual responses.  
+- **Investment Advisory:** **Personalized recommendations** based on your financial habits and goals.  
+- **Quick Prompts:** Ready-made templates for instant insights.  
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 📈 Insights Hub  
+Dive deeper into your financial behavior with:  
+- **Spending Analysis:** Month-over-month expense comparisons by category.  
+- **AI Recommendations:** Actionable tips like *"Maintain current spending"* or *"Reduce coffee expenses."*  
+- **Budget Planning:** Simple tools for forecasting and goal setting.  
+- **Investment Tips:** AI-generated guidance to optimize your portfolio.  
 
-Follow these steps:
+---
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 🧩 Tech Stack  
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+| Layer | Technology |
+|-------|-------------|
+| **Frontend** | **React + TypeScript + Shadcn/UI** |
+| **Backend** | **FastAPI (Python 3.8+)** |
+| **Database** | **Firebase Firestore** |
+| **AI Layer** | **OpenAI + CrewAI Agents** |
+| **Design** | **Fully responsive dark UI** for a premium user experience |
 
-# Step 3: Install the necessary dependencies.
-npm i
+---
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+## 🚀 Quick Start  
+
+### 1️⃣ Clone Repository  
+```bash
+git clone <https://github.com/RishulGupta/Finance-Coach-AI.git>
 ```
 
-**Edit a file directly in GitHub**
+### 2️⃣ Frontend Setup  
+```bash
+cd src
+npm install
+cp .env.example .env.local
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+**Configure environment variables** in `.env.local`:  
+```bash
+VITE_API_BASE_URL=http://localhost:8000
+VITE_FIREBASE_CONFIG=your_firebase_config
+```
 
-**Use GitHub Codespaces**
+### 3️⃣ Backend Setup  
+```bash
+cd src/backend
+python -m venv venv
+source venv/bin/activate       # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+**Example `.env` file** for backend:
+```bash
+OPENAI_API_KEY=your_openai_key
+CREWAI_API_KEY=your_crewai_key
+FIREBASE_PROJECT_ID=your_project_id
+DEBUG=True
+```
 
-## What technologies are used for this project?
+### 4️⃣ Run Application  
+**Start Backend:**  
+```bash
+cd src/backend
+uvicorn app:app --reload --port 8000
+```
 
-This project is built with:
+**Start Frontend:**  
+```bash
+npm run dev
+```
+**App runs at:** [http://localhost:5173](http://localhost:5173)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+## 🔌 API Overview  
 
-Simply open [Lovable](https://lovable.dev/projects/7812e515-8eee-4793-82cc-7d31d2a3fdc6) and click on Share -> Publish.
+| Endpoint | Description |
+|-----------|-------------|
+| **POST /api/upload** | **Upload financial statements** |
+| **GET /api/data/{year}/{month}** | **Retrieve monthly analytics** |
+| **GET /api/insights/{year}/{month}** | **Fetch AI-generated insights** |
+| **POST /api/chat** | **Query the AI-based financial advisor** |
 
-## Can I connect a custom domain to my Lovable project?
+---
 
-Yes, you can!
+## 🤝 Contributing  
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+1. **Fork** this repository  
+2. Create a new branch (`feature/your-feature`)  
+3. **Commit and push** your changes  
+4. Submit a **Pull Request**  
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
